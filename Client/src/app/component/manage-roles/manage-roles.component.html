@@ -1,0 +1,91 @@
+<section class="admin-hero">
+  <div class="container">
+    <a class="back-link" routerLink="/dashboard"><i class="bi bi-arrow-left"></i> Dashboard</a>
+    <h1 class="display-5 mt-2 mb-1">User roles &amp; permissions</h1>
+    <p class="lead mb-0" style="color:#94a3b8;">Promote or demote writers. Admin-only.</p>
+  </div>
+</section>
+
+<section class="page-shell">
+  <div class="container">
+
+    <div class="alert alert-danger" *ngIf="errorMessage">{{errorMessage}}</div>
+
+    <!-- Skeleton -->
+    <div class="placeholder-card placeholder-glow" *ngIf="loading">
+      <span class="placeholder col-12" style="height:3rem;display:block;margin-bottom:0.5rem;" *ngFor="let i of [1,2,3,4]"></span>
+    </div>
+
+    <div class="table-card" *ngIf="!loading">
+      <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
+        <h2 class="h6 fw-bold mb-0">All users — {{users.length}} total</h2>
+        <span class="badge text-bg-danger"><i class="bi bi-shield-lock me-1"></i>Admin view</span>
+      </div>
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th class="text-center">Current role</th>
+            <th>Change role</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users">
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar" style="width:34px;height:34px;font-size:0.75rem;flex-shrink:0;">
+                  {{(user.userName || '?')[0].toUpperCase()}}
+                </div>
+                <div>
+                  <div class="fw-semibold" style="font-size:0.9rem;">{{user.userName}}</div>
+                  <div *ngIf="user.userId === currentUserId" class="text-muted-soft" style="font-size:0.75rem;">You</div>
+                </div>
+              </div>
+            </td>
+            <td class="text-muted-soft" style="font-size:0.875rem;">{{user.userEmail}}</td>
+            <td class="text-center">
+              <span class="badge" [ngClass]="roleBadgeClass(user.role || 'USER')">{{user.role || 'USER'}}</span>
+            </td>
+            <td>
+              <div class="btn-group role-btn-group" *ngIf="user.userId !== currentUserId">
+                <button *ngFor="let role of roles"
+                        class="btn"
+                        [class.btn-dark]="user.role === role"
+                        [class.btn-outline-secondary]="user.role !== role"
+                        (click)="changeRole(user, role)"
+                        [disabled]="saving[user.userId!]">
+                  {{role}}
+                </button>
+              </div>
+              <span class="text-muted-soft" style="font-size:0.8rem;" *ngIf="user.userId === currentUserId">—</span>
+            </td>
+            <td>
+              <span class="badge text-bg-success" *ngIf="message[user.userId!] === 'Updated'">
+                <i class="bi bi-check2"></i> Saved
+              </span>
+              <span class="text-danger" style="font-size:0.8rem;"
+                    *ngIf="message[user.userId!] && message[user.userId!] !== 'Updated'">
+                {{message[user.userId!]}}
+              </span>
+              <span class="spinner-border spinner-border-sm text-muted" *ngIf="saving[user.userId!]"></span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="empty-state" *ngIf="users.length === 0">
+        <i class="bi bi-people"></i>
+        <p class="text-muted-soft mt-2">No users found.</p>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="d-flex flex-wrap gap-3 mt-4" style="font-size:0.875rem;">
+      <div><span class="badge text-bg-secondary me-1">USER</span>Can read, comment</div>
+      <div><span class="badge text-bg-warning me-1">EDITOR</span>Can create &amp; edit posts</div>
+      <div><span class="badge text-bg-danger me-1">ADMIN</span>Full access including user management</div>
+    </div>
+
+  </div>
+</section>

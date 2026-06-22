@@ -1,0 +1,9 @@
+/* All navbar styles are in styles.css — this file intentionally left minimal */
+.nav-user-chip {
+  background: #f1f5f9;
+  border-radius: 20px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+}

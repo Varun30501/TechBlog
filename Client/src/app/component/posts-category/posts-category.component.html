@@ -1,0 +1,42 @@
+<section class="category-header">
+  <div class="container">
+    <a class="back-link" routerLink="/home"><i class="bi bi-arrow-left"></i> Home</a>
+    <h1>{{category?.categoryName || 'Category'}}</h1>
+    <p>{{category?.categoryDescription || 'Browse posts collected under this topic.'}}</p>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+    <div class="row g-4" *ngIf="loading">
+      <div class="col-md-6 col-lg-4" *ngFor="let item of [1,2,3]">
+        <div class="placeholder-card placeholder-glow">
+          <span class="placeholder col-12 image-placeholder"></span>
+          <span class="placeholder col-8"></span>
+          <span class="placeholder col-10"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && posts.length === 0">
+      <i class="bi bi-folder2-open"></i>
+      <h2>No posts in this category yet</h2>
+      <a class="btn btn-dark" routerLink="/add-post">Write one</a>
+    </div>
+
+    <div class="row g-4" *ngIf="!loading && posts.length > 0">
+      <div class="col-md-6 col-xl-4" *ngFor="let post of posts">
+        <article class="post-card h-100">
+          <a [routerLink]="['/post', post.postId]" class="post-image">
+            <img [src]="imageSrc(post)" [alt]="post.postTitle">
+          </a>
+          <div class="post-body">
+            <span class="small text-secondary">{{post.postCreation | date:'mediumDate'}} · {{post.readingMinutes || 1}} min read</span>
+            <h2><a [routerLink]="['/post', post.postId]">{{post.postTitle}}</a></h2>
+            <p>{{(post.postExcerpt || post.postContent) | slice:0:150}}</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,39 @@
+<section class="search-hero">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 text-center">
+        <p class="section-kicker mb-2">Search</p>
+        <h1 class="display-5 mb-3">Find the post you need</h1>
+        <form class="search-box" (submit)="postSearch(title.value); $event.preventDefault()">
+          <label class="visually-hidden" for="title">Search posts</label>
+          <input type="search" id="title" class="form-control form-control-lg" placeholder="Search by title or content..." #title>
+          <button class="btn btn-dark btn-lg" type="submit">
+            <i class="bi bi-search"></i>
+            Search
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="page-shell">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+      <h2 class="h4 mb-0">Browse topics</h2>
+      <span class="text-muted-soft small">{{categories.length}} categories</span>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6 col-lg-4" *ngFor="let category of categories">
+        <a class="topic-tile" [routerLink]="['/category', category.categoryId]">
+          <i class="bi bi-folder2-open"></i>
+          <span>
+            <strong>{{category.categoryName}}</strong>
+            <small>{{category.categoryDescription || 'Explore related posts'}}</small>
+          </span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

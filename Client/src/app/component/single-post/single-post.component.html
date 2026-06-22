@@ -1,0 +1,292 @@
+<!-- ======= LOADING / ERROR ======= -->
+<ng-container *ngIf="loading">
+  <section class="post-hero">
+    <div class="container">
+      <div class="placeholder-glow">
+        <span class="placeholder col-2 mb-3" style="height:1.5rem;display:block;border-radius:6px;"></span>
+        <span class="placeholder col-8 mb-2" style="height:2.5rem;display:block;border-radius:6px;"></span>
+        <span class="placeholder col-5" style="height:1rem;display:block;border-radius:6px;"></span>
+      </div>
+    </div>
+  </section>
+  <div class="container py-5">
+    <div class="placeholder-glow">
+      <span class="placeholder d-block mb-4" style="height:420px;border-radius:12px;"></span>
+      <span class="placeholder col-12 mb-2" style="height:1rem;display:block;"></span>
+      <span class="placeholder col-10 mb-2" style="height:1rem;display:block;"></span>
+      <span class="placeholder col-8" style="height:1rem;display:block;"></span>
+    </div>
+  </div>
+</ng-container>
+
+<div class="alert alert-danger m-4" *ngIf="!loading && errorMessage">{{errorMessage}}</div>
+
+<!-- ======= POST HERO ======= -->
+<ng-container *ngIf="!loading && post as currentPost">
+
+  <section class="post-hero">
+    <div class="container">
+
+      <!-- Home button -->
+      <a class="back-link mb-3" routerLink="/home">
+        <i class="bi bi-house-fill"></i> Home
+      </a>
+
+      <!-- Category + featured badge -->
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <a class="badge text-bg-light text-decoration-none"
+           *ngIf="currentPost.category"
+           [routerLink]="['/category', currentPost.category.categoryId]">
+          {{currentPost.category.categoryName}}
+        </a>
+        <span class="badge featured-badge" *ngIf="currentPost.featured">
+          <i class="bi bi-star-fill me-1"></i>Featured
+        </span>
+      </div>
+
+      <h1>{{currentPost.postTitle}}</h1>
+      <p class="post-excerpt" *ngIf="currentPost.postExcerpt">{{currentPost.postExcerpt}}</p>
+
+      <div class="post-meta mt-3">
+        <span><i class="bi bi-person"></i> {{currentPost.user?.userName || 'TechBlog'}}</span>
+        <span><i class="bi bi-calendar"></i> {{currentPost.postCreation | date:'mediumDate'}}</span>
+        <span><i class="bi bi-clock"></i> {{currentPost.readingMinutes || 1}} min read</span>
+        <span><i class="bi bi-eye"></i> {{currentPost.viewCount || 0}} views</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= MAIN LAYOUT ======= -->
+  <section class="post-layout">
+    <div class="container">
+      <div class="row g-5">
+
+        <!-- ── Article ── -->
+        <div class="col-lg-8">
+
+          <!-- Cover image — top-left of article, natural size -->
+          <div class="post-cover-wrap" *ngIf="hasImage(currentPost)">
+            <img class="post-cover-img" [src]="imageSrc(currentPost)" [alt]="currentPost.postTitle">
+          </div>
+
+          <article class="post-content" [innerHTML]="currentPost.postContent"></article>
+
+          <!-- Tags -->
+          <div class="d-flex flex-wrap gap-2 mt-4" *ngIf="currentPost.tags && currentPost.tags.length > 0">
+            <a *ngFor="let tag of currentPost.tags" class="topic-pill" style="font-size:0.8rem;" routerLink="/search">
+              <i class="bi bi-hash"></i>{{tag.tagName}}
+            </a>
+          </div>
+
+          <!-- Share bar -->
+          <div class="share-bar mt-4 pt-4">
+            <span class="fw-semibold small">Share this post</span>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              <a class="btn btn-outline-dark btn-sm"
+                 [href]="'https://twitter.com/intent/tweet?text=' + currentPost.postTitle + '&url=' + pageUrl"
+                 target="_blank" rel="noopener">
+                <i class="bi bi-twitter-x me-1"></i>Twitter / X
+              </a>
+              <a class="btn btn-outline-dark btn-sm"
+                 [href]="'https://www.linkedin.com/sharing/share-offsite/?url=' + pageUrl"
+                 target="_blank" rel="noopener">
+                <i class="bi bi-linkedin me-1"></i>LinkedIn
+              </a>
+              <button class="btn btn-outline-dark btn-sm" (click)="copyLink()">
+                <i class="bi bi-link-45deg me-1"></i>Copy link
+              </button>
+            </div>
+          </div>
+
+          <!-- Comments -->
+          <section class="comments-section">
+            <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+              <h2 class="h4 mb-0">Comments</h2>
+              <span class="text-muted-soft small">{{comments.length}} {{comments.length === 1 ? 'reply' : 'replies'}}</span>
+            </div>
+
+            <div class="comment-box mb-4" *ngIf="isSignedIn; else signInPrompt">
+              <label class="form-label" for="comment">Join the discussion</label>
+              <textarea class="form-control" id="comment" rows="4"
+                        placeholder="Add a thoughtful comment…" #comment></textarea>
+              <div class="d-flex align-items-center justify-content-between gap-2 mt-3">
+                <span class="small text-muted-soft">{{commentMessage}}</span>
+                <button type="button" class="btn btn-dark btn-sm"
+                        (click)="addComment(comment.value); comment.value=''"
+                        [disabled]="commentSaving">
+                  <span class="spinner-border spinner-border-sm me-1" *ngIf="commentSaving"></span>
+                  <i class="bi bi-send me-1" *ngIf="!commentSaving"></i>Post comment
+                </button>
+              </div>
+            </div>
+
+            <ng-template #signInPrompt>
+              <div class="comment-box mb-4">
+                <p class="mb-2 text-muted-soft">Sign in to join the discussion.</p>
+                <a class="btn btn-outline-dark btn-sm" routerLink="/signin">
+                  <i class="bi bi-box-arrow-in-right me-1"></i>Sign in
+                </a>
+              </div>
+            </ng-template>
+
+            <div class="comment-list" *ngIf="comments.length > 0; else noComments">
+              <div class="comment-item" *ngFor="let c of comments">
+                <div class="avatar">{{initials(c.user?.userName)}}</div>
+                <div>
+                  <div class="d-flex flex-wrap align-items-center gap-2">
+                    <strong>{{c.user?.userName || 'Reader'}}</strong>
+                    <span class="small text-muted-soft">{{c.commentCreation | date:'mediumDate'}}</span>
+                  </div>
+                  <p class="mb-0">{{c.content}}</p>
+                </div>
+              </div>
+            </div>
+
+            <ng-template #noComments>
+              <div class="empty-state">
+                <i class="bi bi-chat-left"></i>
+                <h3 class="h5 mt-2">No comments yet</h3>
+                <p class="text-muted-soft mb-0">Be the first to respond.</p>
+              </div>
+            </ng-template>
+          </section>
+
+        </div>
+
+        <!-- ── Sidebar ── -->
+        <aside class="col-lg-4">
+
+          <!-- Author card -->
+          <div class="sidebar-panel mb-4 author-card" *ngIf="currentPost.user">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <!-- Avatar: photo if saved, else initials -->
+              <div class="author-avatar-wrap">
+                <img *ngIf="authorAvatar" [src]="authorAvatar" alt="Author photo" class="author-avatar-img">
+                <div *ngIf="!authorAvatar" class="avatar avatar-lg">{{initials(currentPost.user.userName)}}</div>
+              </div>
+              <div>
+                <div class="fw-bold" style="font-size:0.95rem;">{{currentPost.user.userName}}</div>
+                <!-- Title · Organisation -->
+                <div class="author-designation" *ngIf="authorTitle || authorOrg">
+                  {{authorTitle}}<span *ngIf="authorTitle && authorOrg"> · </span>{{authorOrg}}
+                </div>
+                <div class="text-muted-soft" style="font-size:0.78rem;" *ngIf="!authorTitle && !authorOrg">Author</div>
+              </div>
+            </div>
+
+            <!-- Qualification -->
+            <div class="author-qualification" *ngIf="authorQualification">
+              <i class="bi bi-mortarboard-fill me-1"></i>{{authorQualification}}
+            </div>
+
+            <!-- Bio -->
+            <p class="author-bio" *ngIf="authorBio">{{authorBio}}</p>
+            <p class="author-bio" *ngIf="!authorBio && currentPost.user.about">{{currentPost.user.about}}</p>
+
+            <!-- Expertise tags -->
+            <div class="author-tags" *ngIf="authorExpertise">
+              <span class="author-tag" *ngFor="let skill of authorExpertise.split(',')">
+                {{skill.trim()}}
+              </span>
+            </div>
+
+            <!-- Social links -->
+            <div class="author-social" *ngIf="authorLinkedIn || authorWebsite">
+              <a *ngIf="authorLinkedIn" [href]="authorLinkedIn" target="_blank" rel="noopener" class="author-social-link">
+                <i class="bi bi-linkedin"></i> LinkedIn
+              </a>
+              <a *ngIf="authorWebsite" [href]="authorWebsite" target="_blank" rel="noopener" class="author-social-link">
+                <i class="bi bi-globe2"></i> Website
+              </a>
+            </div>
+          </div>
+
+          <!-- Topics -->
+          <div class="sidebar-panel mb-4">
+            <h2 class="h6 fw-bold mb-3">Browse topics</h2>
+            <div class="topic-list">
+              <a *ngFor="let category of categories"
+                 [routerLink]="['/category', category.categoryId]">
+                {{category.categoryName}}
+                <i class="bi bi-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Popular posts -->
+          <div class="sidebar-panel">
+            <h2 class="h6 fw-bold mb-3">Popular reads</h2>
+            <a class="popular-link" *ngFor="let story of popularPosts" [routerLink]="['/post', story.postId]">
+              <span>{{story.postTitle}}</span>
+              <small><i class="bi bi-eye me-1"></i>{{story.viewCount || 0}}</small>
+            </a>
+            <p class="text-muted-soft mb-0 small" *ngIf="popularPosts.length === 0">
+              Popular posts appear once readers start visiting.
+            </p>
+          </div>
+
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======= RELATED / EXPLORE MORE ======= -->
+  <section class="explore-band py-5">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+          <p class="section-kicker mb-1">Keep reading</p>
+          <h2 class="h4 fw-bold mb-0">More from TechBlog</h2>
+        </div>
+        <a class="btn btn-outline-dark" routerLink="/home">
+          <i class="bi bi-compass me-1"></i>Explore all
+        </a>
+      </div>
+
+      <div class="row g-4" *ngIf="relatedPosts.length > 0">
+        <div class="col-md-6 col-lg-4" *ngFor="let rp of relatedPosts">
+          <article class="post-card h-100">
+            <a [routerLink]="['/post', rp.postId]" class="post-image">
+              <img [src]="imageSrc(rp)" [alt]="rp.postTitle" loading="lazy">
+            </a>
+            <div class="post-body d-flex flex-column">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge text-bg-light" *ngIf="rp.category">{{rp.category.categoryName}}</span>
+                <span class="small text-muted ms-auto">{{rp.readingMinutes || 1}} min</span>
+              </div>
+              <h3 class="flex-grow-1"><a [routerLink]="['/post', rp.postId]">{{rp.postTitle}}</a></h3>
+              <div class="post-meta">
+                <span><i class="bi bi-eye me-1"></i>{{rp.viewCount || 0}} views</span>
+                <span>{{rp.postCreation | date:'mediumDate'}}</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <!-- Fall back to popular posts if no related -->
+      <div class="row g-4" *ngIf="relatedPosts.length === 0 && popularPosts.length > 0">
+        <div class="col-md-6 col-lg-4" *ngFor="let rp of popularPosts.slice(0,3)">
+          <article class="post-card h-100">
+            <a [routerLink]="['/post', rp.postId]" class="post-image">
+              <img [src]="imageSrc(rp)" [alt]="rp.postTitle" loading="lazy">
+            </a>
+            <div class="post-body d-flex flex-column">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge text-bg-light" *ngIf="rp.category">{{rp.category.categoryName}}</span>
+                <span class="small text-muted ms-auto">{{rp.readingMinutes || 1}} min</span>
+              </div>
+              <h3 class="flex-grow-1"><a [routerLink]="['/post', rp.postId]">{{rp.postTitle}}</a></h3>
+              <div class="post-meta">
+                <span><i class="bi bi-eye me-1"></i>{{rp.viewCount || 0}} views</span>
+                <span>{{rp.postCreation | date:'mediumDate'}}</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</ng-container>

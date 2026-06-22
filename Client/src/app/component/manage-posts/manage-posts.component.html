@@ -1,0 +1,78 @@
+<section class="admin-hero">
+  <div class="container">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+      <div>
+        <p class="section-kicker mb-2">Content</p>
+        <h1 class="display-5 mb-2">Manage posts</h1>
+        <p class="lead mb-0">Edit articles, review metadata, and remove stale content.</p>
+      </div>
+      <div class="quick-actions align-self-lg-end">
+        <a class="btn btn-light" routerLink="/add-post"><i class="bi bi-plus-lg"></i> New post</a>
+        <a class="btn btn-outline-light" routerLink="/dashboard">Dashboard</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="page-shell">
+  <div class="container">
+    <div class="alert alert-danger" *ngIf="errorMessage">{{errorMessage}}</div>
+
+    <div class="table-card" *ngIf="!loading && posts.length > 0">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Post</th>
+            <th>Category</th>
+            <th>Stats</th>
+            <th>Updated</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let post of posts">
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                <img class="thumb" [src]="imageSrc(post)" [alt]="post.postTitle">
+                <div>
+                  <strong>{{post.postTitle}}</strong>
+                  <div class="small text-muted-soft">{{post.user?.userName || 'TechBlog'}}</div>
+                </div>
+              </div>
+            </td>
+            <td>{{post.category?.categoryName || 'Uncategorized'}}</td>
+            <td>
+              <span class="badge text-bg-light me-1">{{post.readingMinutes || 1}} min</span>
+              <span class="badge text-bg-light me-1">{{post.viewCount || 0}} views</span>
+              <span class="badge text-bg-success"  *ngIf="post.featured">Featured</span>
+              <span class="badge text-bg-secondary" *ngIf="post.status === 'DRAFT'">Draft</span>
+              <span class="badge text-bg-info"      *ngIf="post.status === 'SCHEDULED'">Scheduled</span>
+            </td>
+            <td>{{(post.postUpdation || post.postCreation) | date:'mediumDate'}}</td>
+            <td class="text-end">
+              <a class="btn btn-outline-dark btn-sm me-2" [routerLink]="['/update-post', post.postId]">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button type="button" class="btn btn-outline-danger btn-sm" (click)="deletePost(post.postId)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="placeholder-card placeholder-glow" *ngIf="loading">
+      <span class="placeholder col-12"></span>
+      <span class="placeholder col-10"></span>
+      <span class="placeholder col-8"></span>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && posts.length === 0">
+      <i class="bi bi-journal-plus"></i>
+      <h2>No posts yet</h2>
+      <p class="text-muted-soft">Create your first post to fill the feed.</p>
+      <a class="btn btn-dark" routerLink="/add-post">Write post</a>
+    </div>
+  </div>
+</section>

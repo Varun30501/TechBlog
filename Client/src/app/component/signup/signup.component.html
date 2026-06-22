@@ -1,0 +1,88 @@
+<div class="auth-shell">
+
+  <!-- Decorative left panel -->
+  <div class="auth-brand-panel">
+    <div class="brand-logo">
+      <div class="logo-mark"><i class="bi bi-journal-richtext"></i></div>
+      <span>TechBlog</span>
+    </div>
+
+    <div class="auth-brand-copy">
+      <blockquote>Start writing.<br>Find your readers.</blockquote>
+      <p>Your writing workspace for technical ideas and engineering stories.</p>
+    </div>
+
+    <ul class="features-list">
+      <li><i class="bi bi-check-circle-fill"></i> Publish articles with cover images</li>
+      <li><i class="bi bi-check-circle-fill"></i> Organise work into categories</li>
+      <li><i class="bi bi-check-circle-fill"></i> Engage with reader comments</li>
+      <li><i class="bi bi-check-circle-fill"></i> Feature your best posts</li>
+    </ul>
+  </div>
+
+  <!-- Form panel -->
+  <div class="auth-form-panel">
+    <div class="auth-form-inner">
+      <p class="section-kicker mb-2">Join the workspace</p>
+      <h1 class="mb-2">Create your account</h1>
+      <p class="text-muted-soft mb-4" style="font-size:0.9rem;">
+        Start publishing technical stories in minutes. Free to join.
+      </p>
+
+      <div class="alert alert-danger d-flex align-items-center gap-2" *ngIf="errorMessage">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        {{errorMessage}}
+      </div>
+
+      <form (submit)="saveUser(userName.value, dob.value, email.value, password.value, repassword.value, about.value); $event.preventDefault()">
+
+        <!-- Step 1: Identity -->
+        <div class="row g-3">
+          <div class="col-md-7">
+            <label class="form-label fw-semibold" for="username">Full name</label>
+            <input type="text" id="username" name="username" placeholder="Alex Johnson"
+                   class="form-control" required #userName>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label fw-semibold" for="dob">Date of birth</label>
+            <input type="date" id="dob" name="dob" class="form-control" #dob>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold" for="email">Email address</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com"
+                   class="form-control" required #email>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="At least 8 characters"
+                   class="form-control" required #password>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold" for="password_confirm">Confirm password</label>
+            <input type="password" id="password_confirm" name="password_confirm" placeholder="Repeat password"
+                   class="form-control" required #repassword>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold" for="about">Short bio <span class="text-muted fw-normal">(optional)</span></label>
+            <textarea rows="3" id="about" name="about"
+                      placeholder="What do you write about? E.g. Java, AI, distributed systems…"
+                      class="form-control" #about></textarea>
+          </div>
+        </div>
+
+        <button class="btn btn-dark btn-lg w-100 mt-4" type="submit" [disabled]="loading">
+          <span class="spinner-border spinner-border-sm" *ngIf="loading"></span>
+          <i class="bi bi-person-plus" *ngIf="!loading"></i>
+          <span>{{loading ? 'Creating account…' : 'Create account'}}</span>
+        </button>
+      </form>
+
+      <hr class="my-4">
+
+      <p class="text-center text-muted-soft mb-0" style="font-size:0.9rem;">
+        Already have an account? <a routerLink="/signin" class="fw-semibold">Sign in</a>
+      </p>
+    </div>
+  </div>
+
+</div>

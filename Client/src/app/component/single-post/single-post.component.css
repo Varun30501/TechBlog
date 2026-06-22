@@ -1,0 +1,231 @@
+/* ── Post hero ── */
+.post-hero .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: color 140ms;
+  margin-bottom: 0.75rem;
+}
+
+.post-hero .back-link:hover { color: #e2e8f0; }
+
+.post-hero h1 {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  max-width: 760px;
+  color: #fff;
+}
+
+.post-excerpt {
+  color: #94a3b8;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 680px;
+  margin-top: 0.75rem;
+}
+
+.featured-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+}
+
+.post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.post-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* ── Cover image ── */
+.post-cover-wrap {
+  margin-bottom: 2rem;
+}
+
+.post-cover-img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.10);
+}
+
+/* ── Content area ── */
+.post-layout {
+  padding: 3rem 0 4rem;
+}
+
+.post-content {
+  font-size: 1.075rem;
+  line-height: 1.82;
+  color: #374151;
+  word-break: break-word;
+}
+
+.post-content :is(h2, h3, h4) {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 2rem 0 0.85rem;
+  color: #111827;
+}
+
+.post-content h2 { font-size: 1.5rem; }
+.post-content h3 { font-size: 1.25rem; }
+
+.post-content p  { margin-bottom: 1.25rem; }
+
+.post-content a {
+  color: #0f766e;
+  text-underline-offset: 0.2em;
+}
+
+.post-content blockquote {
+  border-left: 3px solid #0f766e;
+  color: #6b7280;
+  margin: 1.5rem 0;
+  padding: 0.75rem 1.25rem;
+  background: #f8fafc;
+  border-radius: 0 8px 8px 0;
+}
+
+.post-content pre {
+  background: #1e293b;
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  overflow-x: auto;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.post-content code {
+  background: #f1f5f9;
+  border-radius: 4px;
+  font-size: 0.875em;
+  padding: 0.15em 0.4em;
+  color: #0f766e;
+}
+
+.post-content pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+.post-content ul,
+.post-content ol { padding-left: 1.75rem; margin-bottom: 1.25rem; }
+
+.post-content img {
+  border-radius: 8px;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+}
+
+/* ── Share bar ── */
+.share-bar {
+  border-top: 1px solid #e5e7eb;
+}
+
+/* ── Author card ── */
+.author-card .avatar-lg {
+  width: 52px;
+  height: 52px;
+  font-size: 1.1rem;
+  border-radius: 50%;
+  background: #ccfbf1;
+  color: #0f766e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+/* ── Explore band ── */
+.explore-band {
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
+}
+/* ── Author card enhancements ── */
+.author-avatar-wrap { flex-shrink: 0; }
+
+.author-avatar-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 2px solid var(--color-border, #e5e7eb);
+}
+
+.author-designation {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-accent, #0f766e);
+  margin-top: 0.1rem;
+  line-height: 1.3;
+}
+
+.author-qualification {
+  font-size: 0.78rem;
+  color: var(--color-muted, #6b7280);
+  margin-bottom: 0.5rem;
+}
+
+.author-bio {
+  font-size: 0.85rem;
+  color: var(--color-ink-soft, #374151);
+  line-height: 1.65;
+  margin-bottom: 0.65rem;
+}
+
+.author-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+}
+
+.author-tag {
+  background: var(--color-accent-light, #ccfbf1);
+  color: var(--color-accent, #0f766e);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  border: 1px solid rgba(15,118,110,0.15);
+}
+
+.author-social {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  margin-top: 0.25rem;
+}
+
+.author-social-link {
+  font-size: 0.78rem;
+  color: var(--color-muted, #6b7280);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: color 160ms;
+}
+.author-social-link:hover { color: var(--color-accent, #0f766e); }

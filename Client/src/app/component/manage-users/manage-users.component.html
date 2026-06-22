@@ -1,0 +1,60 @@
+<section class="admin-hero">
+  <div class="container">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+      <div>
+        <p class="section-kicker mb-2">Admin</p>
+        <h1 class="display-5 mb-2">Manage users</h1>
+        <p class="lead mb-0">Review accounts and remove users when needed.</p>
+      </div>
+      <div class="quick-actions align-self-lg-end">
+        <a class="btn btn-outline-light" routerLink="/dashboard">Dashboard</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="page-shell">
+  <div class="container">
+    <div class="alert alert-danger" *ngIf="errorMessage">{{errorMessage}}</div>
+
+    <div class="table-card" *ngIf="!loading && users.length > 0">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>About</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users">
+            <td>
+              <strong>{{user.userName}}</strong>
+              <div class="small text-muted-soft">ID {{user.userId}}</div>
+            </td>
+            <td>{{user.userEmail}}</td>
+            <td><span class="badge text-bg-light">{{user.role}}</span></td>
+            <td>{{user.about || 'No bio yet'}}</td>
+            <td class="text-end">
+              <button type="button" class="btn btn-outline-danger btn-sm" (click)="deleteUser(user.userId)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="placeholder-card placeholder-glow" *ngIf="loading">
+      <span class="placeholder col-12"></span>
+      <span class="placeholder col-9"></span>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && users.length === 0">
+      <i class="bi bi-people"></i>
+      <h2>No users yet</h2>
+    </div>
+  </div>
+</section>

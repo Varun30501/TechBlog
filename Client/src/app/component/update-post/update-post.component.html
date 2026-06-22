@@ -1,0 +1,183 @@
+<section class="admin-hero">
+  <div class="container">
+    <a class="back-link" routerLink="/manage-posts"><i class="bi bi-arrow-left"></i> Manage posts</a>
+    <h1 class="display-5 mt-2 mb-1">Edit post</h1>
+    <p class="lead mb-0" style="color:#94a3b8;">Refine content, metadata, SEO, and scheduling.</p>
+  </div>
+</section>
+
+<section class="page-shell">
+  <div class="container">
+
+    <div class="alert alert-danger d-flex align-items-center gap-2" *ngIf="errorMessage">
+      <i class="bi bi-exclamation-circle-fill"></i>{{errorMessage}}
+    </div>
+
+    <ng-container *ngIf="singlePost as post; else loading">
+      <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+          <button class="nav-link" [class.active]="activeTab==='write'" (click)="activeTab='write'">
+            <i class="bi bi-pencil-square me-1"></i>Write
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" [class.active]="activeTab==='seo'" (click)="activeTab='seo'">
+            <i class="bi bi-graph-up me-1"></i>SEO &amp; Meta
+          </button>
+        </li>
+      </ul>
+
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <ng-container *ngIf="activeTab==='write'">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Post title</label>
+              <input type="text" class="form-control form-control-lg" maxlength="120"
+                     [(ngModel)]="post.postTitle" name="postTitle">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Excerpt</label>
+              <textarea class="form-control" rows="2" maxlength="240"
+                        [(ngModel)]="post.postExcerpt" name="postExcerpt"></textarea>
+            </div>
+            <label class="form-label fw-semibold">Content</label>
+            <div class="editor-toolbar">
+              <button type="button" class="btn" [class.active]="isActive('bold')"         (click)="toggleBold()"        title="Bold"><i class="bi bi-type-bold"></i></button>
+              <button type="button" class="btn" [class.active]="isActive('italic')"       (click)="toggleItalic()"      title="Italic"><i class="bi bi-type-italic"></i></button>
+              <button type="button" class="btn" [class.active]="isActive('underline')"    (click)="toggleUnderline()"   title="Underline"><i class="bi bi-type-underline"></i></button>
+              <div class="divider"></div>
+              <button type="button" class="btn" [class.active]="isActive('heading',{level:2})" (click)="setH(2)"><b>H2</b></button>
+              <button type="button" class="btn" [class.active]="isActive('heading',{level:3})" (click)="setH(3)"><b>H3</b></button>
+              <div class="divider"></div>
+              <button type="button" class="btn" [class.active]="isActive('bulletList')"   (click)="toggleBulletList()"   title="Bullets"><i class="bi bi-list-ul"></i></button>
+              <button type="button" class="btn" [class.active]="isActive('orderedList')"  (click)="toggleOrderedList()"  title="Numbers"><i class="bi bi-list-ol"></i></button>
+              <div class="divider"></div>
+              <button type="button" class="btn" [class.active]="isActive('blockquote')"   (click)="toggleBlockquote()"   title="Blockquote"><i class="bi bi-blockquote-left"></i></button>
+              <button type="button" class="btn" [class.active]="isActive('code')"         (click)="toggleCode()"         title="Code"><i class="bi bi-code"></i></button>
+              <button type="button" class="btn" [class.active]="isActive('codeBlock')"    (click)="toggleCodeBlock()"    title="Code block"><i class="bi bi-code-square"></i></button>
+              <button type="button" class="btn"                                            (click)="setLink()"            title="Link"><i class="bi bi-link-45deg"></i></button>
+            </div>
+            <div class="tiptap-wrap">
+              <div id="tiptap-editor"></div>
+              <div class="word-count-bar">
+                {{wordCount}} words
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="activeTab==='seo'">
+            <div class="editor-panel">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="h5 fw-bold mb-0">SEO &amp; Meta fields</h2>
+                <span class="seo-score"
+                      [class.good]="metaTitle && metaDescription"
+                      [class.ok]="(metaTitle && !metaDescription) || (!metaTitle && metaDescription)"
+                      [class.missing]="!metaTitle && !metaDescription">
+                  <i class="bi bi-circle-fill" style="font-size:0.5rem;"></i>
+                  {{metaTitle && metaDescription ? 'Good' : (metaTitle || metaDescription ? 'Partial' : 'Missing')}}
+                </span>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Meta title</label>
+                <input type="text" class="form-control" maxlength="160" [(ngModel)]="metaTitle">
+                <div class="text-end text-muted-soft mt-1" style="font-size:0.78rem;">{{metaTitle.length}}/160</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Meta description</label>
+                <textarea class="form-control" rows="3" maxlength="320" [(ngModel)]="metaDescription"></textarea>
+                <div class="text-end text-muted-soft mt-1" style="font-size:0.78rem;">{{metaDescription.length}}/320</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Meta keywords</label>
+                <input type="text" class="form-control" [(ngModel)]="metaKeywords">
+              </div>
+              <div class="p-3 rounded" style="background:#f8fafc;border:1px solid #e5e7eb;">
+                <p class="text-muted-soft mb-2" style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Search preview</p>
+                <div style="max-width:540px;">
+                  <div style="color:#1a0dab;font-size:1.05rem;font-weight:500;">{{metaTitle || post.postTitle}}</div>
+                  <div style="color:#006621;font-size:0.8rem;">techblog.local › posts</div>
+                  <div style="color:#4d4d4d;font-size:0.875rem;line-height:1.5;margin-top:2px;">
+                    {{metaDescription || post.postExcerpt || 'Add a meta description for better search visibility.'}}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+          <div class="admin-card mb-3">
+            <p class="fw-bold mb-3" style="font-size:0.9rem;">Publish settings</p>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Status</label>
+              <select class="form-select" [(ngModel)]="status">
+                <option value="PUBLISHED">Published</option>
+                <option value="DRAFT">Draft</option>
+                <option value="SCHEDULED">Scheduled</option>
+              </select>
+            </div>
+            <div class="mb-3" *ngIf="status === 'SCHEDULED'">
+              <label class="form-label fw-semibold">Publish at</label>
+              <input type="datetime-local" class="form-control" [(ngModel)]="scheduledAt">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Category</label>
+              <select class="form-select" [(ngModel)]="categoryId">
+                <option value="">Choose a category</option>
+                <option *ngFor="let c of categories" [value]="c.categoryId">{{c.categoryName}}</option>
+              </select>
+            </div>
+            <div class="featured-toggle-card" [class.active]="featured">
+              <div class="d-flex align-items-center justify-content-between">
+                <div>
+                  <div class="fw-semibold" style="font-size:0.9rem;">
+                    <i class="bi bi-star-fill me-1" style="color:#f59e0b;"></i>Feature this post
+                  </div>
+                  <div class="text-muted-soft mt-1" style="font-size:0.78rem;">
+                    Featured posts appear prominently on the home page.
+                  </div>
+                </div>
+                <div class="form-check form-switch ms-3 mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch"
+                         id="featured" [(ngModel)]="featured" style="width:2.5rem;height:1.25rem;">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-card mb-3">
+            <label class="form-label fw-semibold">Tags</label>
+            <input type="text" class="form-control" placeholder="java, tutorial" [(ngModel)]="tagsInput">
+            <div class="d-flex flex-wrap gap-1 mt-2" *ngIf="tagsInput">
+              <span *ngFor="let t of tagsInput.split(',')" class="badge text-bg-light border">#{{t.trim()}}</span>
+            </div>
+          </div>
+
+          <div class="admin-card mb-3">
+            <label class="form-label fw-semibold">Cover image</label>
+            <input type="file" accept="image/*" class="form-control" (change)="handleFileInput($event)">
+            <img *ngIf="previewUrl" [src]="previewUrl" alt="Preview" class="cover-preview mt-3">
+            <img *ngIf="!previewUrl && singlePost" [src]="imageSrc(singlePost)" [alt]="singlePost.postTitle" class="cover-preview mt-3">
+          </div>
+
+          <div class="d-flex flex-column gap-2">
+            <button class="btn btn-dark btn-lg" type="button" (click)="updatePost()" [disabled]="saving">
+              <span class="spinner-border spinner-border-sm" *ngIf="saving"></span>
+              <i class="bi bi-save" *ngIf="!saving"></i>
+              {{saving ? 'Saving…' : 'Save changes'}}
+            </button>
+            <a class="btn btn-outline-dark" routerLink="/manage-posts">Cancel</a>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #loading>
+      <div class="placeholder-card placeholder-glow">
+        <span class="placeholder col-8 mb-3" style="height:2rem;display:block;"></span>
+        <span class="placeholder col-12 image-placeholder"></span>
+      </div>
+    </ng-template>
+  </div>
+</section>

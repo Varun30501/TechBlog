@@ -1,0 +1,236 @@
+<section class="admin-hero">
+  <div class="container">
+    <a class="back-link" routerLink="/dashboard"><i class="bi bi-arrow-left"></i> Dashboard</a>
+    <h1 class="display-5 mt-2 mb-1">Write a new post</h1>
+    <p class="lead mb-0" style="color:#94a3b8;">Rich editor · Drafts · Scheduling · SEO</p>
+  </div>
+</section>
+
+<section class="page-shell">
+  <div class="container">
+
+    <div class="alert alert-danger d-flex align-items-center gap-2" *ngIf="errorMessage">
+      <i class="bi bi-exclamation-circle-fill"></i>{{errorMessage}}
+    </div>
+
+    <!-- Tab nav -->
+    <ul class="nav nav-tabs mb-4">
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeTab==='write'" (click)="activeTab='write'">
+          <i class="bi bi-pencil-square me-1"></i>Write
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeTab==='seo'" (click)="activeTab='seo'">
+          <i class="bi bi-graph-up me-1"></i>SEO &amp; Meta
+        </button>
+      </li>
+    </ul>
+
+    <div class="row g-4">
+      <!-- ── Left: main editor ── -->
+      <div class="col-lg-8">
+
+        <!-- WRITE tab -->
+        <ng-container *ngIf="activeTab==='write'">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="postTitle">Post title</label>
+            <input type="text" id="postTitle" class="form-control form-control-lg"
+                   placeholder="Give your post a compelling title…"
+                   maxlength="120" [(ngModel)]="postTitle">
+            <div class="text-end text-muted-soft" style="font-size:0.78rem;margin-top:3px;">
+              {{postTitle.length}}/120
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="postExcerpt">Excerpt <span class="text-muted fw-normal">(optional)</span></label>
+            <textarea id="postExcerpt" class="form-control" rows="2" maxlength="240"
+                      placeholder="One-paragraph summary shown in post cards…"
+                      [(ngModel)]="postExcerpt"></textarea>
+          </div>
+
+          <!-- TipTap toolbar -->
+          <label class="form-label fw-semibold">Content</label>
+          <div class="editor-toolbar">
+            <button type="button" class="btn" [class.active]="isActive('bold')"         (click)="toggleBold()"        title="Bold"><i class="bi bi-type-bold"></i></button>
+            <button type="button" class="btn" [class.active]="isActive('italic')"       (click)="toggleItalic()"      title="Italic"><i class="bi bi-type-italic"></i></button>
+            <button type="button" class="btn" [class.active]="isActive('underline')"    (click)="toggleUnderline()"   title="Underline"><i class="bi bi-type-underline"></i></button>
+            <div class="divider"></div>
+            <button type="button" class="btn" [class.active]="isActive('heading',{level:2})" (click)="setH(2)" title="Heading 2"><b>H2</b></button>
+            <button type="button" class="btn" [class.active]="isActive('heading',{level:3})" (click)="setH(3)" title="Heading 3"><b>H3</b></button>
+            <div class="divider"></div>
+            <button type="button" class="btn" [class.active]="isActive('bulletList')"   (click)="toggleBulletList()"   title="Bullet list"><i class="bi bi-list-ul"></i></button>
+            <button type="button" class="btn" [class.active]="isActive('orderedList')"  (click)="toggleOrderedList()"  title="Ordered list"><i class="bi bi-list-ol"></i></button>
+            <div class="divider"></div>
+            <button type="button" class="btn" [class.active]="isActive('blockquote')"   (click)="toggleBlockquote()"   title="Blockquote"><i class="bi bi-blockquote-left"></i></button>
+            <button type="button" class="btn" [class.active]="isActive('code')"         (click)="toggleCode()"         title="Inline code"><i class="bi bi-code"></i></button>
+            <button type="button" class="btn" [class.active]="isActive('codeBlock')"    (click)="toggleCodeBlock()"    title="Code block"><i class="bi bi-code-square"></i></button>
+            <button type="button" class="btn"                                            (click)="setLink()"            title="Insert link"><i class="bi bi-link-45deg"></i></button>
+          </div>
+          <div class="tiptap-wrap">
+            <div id="tiptap-editor"></div>
+            <div class="word-count-bar">
+              {{wordCount}} words
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- SEO tab -->
+        <ng-container *ngIf="activeTab==='seo'">
+          <div class="editor-panel">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h2 class="h5 fw-bold mb-0">SEO &amp; Meta fields</h2>
+              <span class="seo-score"
+                    [class.good]="metaTitle && metaDescription"
+                    [class.ok]="metaTitle && !metaDescription || !metaTitle && metaDescription"
+                    [class.missing]="!metaTitle && !metaDescription">
+                <i class="bi bi-circle-fill" style="font-size:0.5rem;"></i>
+                {{metaTitle && metaDescription ? 'Good' : (metaTitle || metaDescription ? 'Partial' : 'Missing')}}
+              </span>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="metaTitle">
+                Meta title <span class="text-muted fw-normal">(~60 chars)</span>
+              </label>
+              <input type="text" id="metaTitle" class="form-control" maxlength="160"
+                     placeholder="Defaults to post title if left blank"
+                     [(ngModel)]="metaTitle">
+              <div class="d-flex justify-content-between mt-1" style="font-size:0.78rem;">
+                <span class="text-muted-soft">Ideal: 50–60 characters</span>
+                <span [class.text-danger]="metaTitle.length > 60" [class.text-muted]="metaTitle.length <= 60">
+                  {{metaTitle.length}}/160
+                </span>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold" for="metaDesc">
+                Meta description <span class="text-muted fw-normal">(~155 chars)</span>
+              </label>
+              <textarea id="metaDesc" class="form-control" rows="3" maxlength="320"
+                        placeholder="What does this post cover? Shown in Google search results."
+                        [(ngModel)]="metaDescription"></textarea>
+              <div class="d-flex justify-content-between mt-1" style="font-size:0.78rem;">
+                <span class="text-muted-soft">Ideal: 120–155 characters</span>
+                <span [class.text-danger]="metaDescription.length > 155" [class.text-muted]="metaDescription.length <= 155">
+                  {{metaDescription.length}}/320
+                </span>
+              </div>
+            </div>
+
+            <div class="mb-0">
+              <label class="form-label fw-semibold" for="metaKw">
+                Meta keywords <span class="text-muted fw-normal">(comma-separated)</span>
+              </label>
+              <input type="text" id="metaKw" class="form-control"
+                     placeholder="java, spring boot, rest api"
+                     [(ngModel)]="metaKeywords">
+            </div>
+
+            <!-- SERP Preview -->
+            <div class="mt-4 p-3 rounded" style="background:#f8fafc;border:1px solid #e5e7eb;">
+              <p class="text-muted-soft mb-2" style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Search preview</p>
+              <div style="max-width:540px;">
+                <div style="color:#1a0dab;font-size:1.05rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  {{(metaTitle || postTitle) || 'Your post title'}}
+                </div>
+                <div style="color:#006621;font-size:0.8rem;">techblog.local › posts</div>
+                <div style="color:#4d4d4d;font-size:0.875rem;line-height:1.5;margin-top:2px;">
+                  {{(metaDescription || postExcerpt) || 'Your meta description will appear here. Add one to improve click-through rates from search results.'}}
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+      </div>
+
+      <!-- ── Right: sidebar settings ── -->
+      <div class="col-lg-4">
+
+        <!-- Publish settings -->
+        <div class="admin-card mb-3">
+          <p class="fw-bold mb-3" style="font-size:0.9rem;">Publish settings</p>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="status">Status</label>
+            <select id="status" class="form-select" [(ngModel)]="status">
+              <option value="PUBLISHED">Published</option>
+              <option value="DRAFT">Save as draft</option>
+              <option value="SCHEDULED">Schedule</option>
+            </select>
+          </div>
+
+          <div class="mb-3" *ngIf="status === 'SCHEDULED'">
+            <label class="form-label fw-semibold" for="scheduledAt">Publish at</label>
+            <input type="datetime-local" id="scheduledAt" class="form-control" [(ngModel)]="scheduledAt">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="categoryId">Category</label>
+            <select id="categoryId" class="form-select" [(ngModel)]="categoryId">
+              <option value="">Choose a category</option>
+              <option *ngFor="let c of categories" [value]="c.categoryId">{{c.categoryName}}</option>
+            </select>
+          </div>
+
+          <div class="featured-toggle-card" [class.active]="featured">
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div class="fw-semibold" style="font-size:0.9rem;">
+                  <i class="bi bi-star-fill me-1" style="color:#f59e0b;"></i>Feature this post
+                </div>
+                <div class="text-muted-soft mt-1" style="font-size:0.78rem;">
+                  Featured posts appear at the top of the home page in the editor's picks section.
+                </div>
+              </div>
+              <div class="form-check form-switch ms-3 mb-0">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       id="featured" [(ngModel)]="featured" style="width:2.5rem;height:1.25rem;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="admin-card mb-3">
+          <label class="form-label fw-semibold" for="tags">Tags <span class="text-muted fw-normal">(comma-separated)</span></label>
+          <input type="text" id="tags" class="form-control"
+                 placeholder="java, spring-boot, tutorial"
+                 [(ngModel)]="tagsInput">
+          <div class="d-flex flex-wrap gap-1 mt-2" *ngIf="tagsInput">
+            <span *ngFor="let t of tagsInput.split(',')" class="badge text-bg-light border"
+                  style="font-size:0.8rem;">
+              #{{t.trim()}}
+            </span>
+          </div>
+        </div>
+
+        <!-- Cover image -->
+        <div class="admin-card mb-3">
+          <label class="form-label fw-semibold" for="image">Cover image</label>
+          <input type="file" accept="image/*" class="form-control" id="image" (change)="handleFileInput($event)">
+          <img *ngIf="previewUrl" [src]="previewUrl" alt="Cover preview" class="cover-preview mt-3">
+        </div>
+
+        <!-- Action buttons -->
+        <div class="d-flex flex-column gap-2">
+          <button class="btn btn-dark btn-lg" type="button" (click)="addPost()" [disabled]="saving">
+            <span class="spinner-border spinner-border-sm" *ngIf="saving"></span>
+            <ng-container *ngIf="!saving">
+              <i class="bi bi-send"         *ngIf="status === 'PUBLISHED'"></i>
+              <i class="bi bi-save"         *ngIf="status === 'DRAFT'"></i>
+              <i class="bi bi-clock-history" *ngIf="status === 'SCHEDULED'"></i>
+              {{status === 'PUBLISHED' ? 'Publish post' : status === 'DRAFT' ? 'Save draft' : 'Schedule post'}}
+            </ng-container>
+            <span *ngIf="saving">Saving…</span>
+          </button>
+          <a class="btn btn-outline-dark" routerLink="/dashboard">Cancel</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>

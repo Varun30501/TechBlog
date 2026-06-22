@@ -1,0 +1,130 @@
+<section class="admin-hero">
+  <div class="container">
+    <div class="d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-3">
+      <div>
+        <p class="section-kicker mb-2">Dashboard</p>
+        <h1 class="display-5 mb-2 fw-bold" style="letter-spacing:-0.02em;">
+          Welcome back, {{userName}} 👋
+        </h1>
+        <p class="lead mb-0" style="color:#94a3b8;">Here's what's happening with your blog today.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-light btn-sm" routerLink="/add-post">
+          <i class="bi bi-plus-lg"></i>New post
+        </a>
+        <button class="btn btn-outline-light btn-sm" type="button" (click)="logout()">
+          <i class="bi bi-box-arrow-right"></i>Logout
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="page-shell">
+  <div class="container">
+
+    <!-- Stats row -->
+    <div class="row g-3 mb-5">
+      <div class="col-6 col-lg-2">
+        <div class="metric-card">
+          <div class="metric-icon"><i class="bi bi-file-richtext"></i></div>
+          <span>{{stats.published}}</span>
+          <small>Published</small>
+        </div>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="metric-card">
+          <div class="metric-icon"><i class="bi bi-pencil"></i></div>
+          <span>{{stats.drafts}}</span>
+          <small>Drafts</small>
+        </div>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="metric-card">
+          <div class="metric-icon"><i class="bi bi-clock"></i></div>
+          <span>{{stats.scheduled}}</span>
+          <small>Scheduled</small>
+        </div>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="metric-card">
+          <div class="metric-icon"><i class="bi bi-chat-left-text"></i></div>
+          <span>{{stats.comments}}</span>
+          <small>Comments</small>
+        </div>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="metric-card">
+          <div class="metric-icon"><i class="bi bi-tags"></i></div>
+          <span>{{stats.categories}}</span>
+          <small>Categories</small>
+        </div>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="metric-card">
+          <div class="metric-icon"><i class="bi bi-people"></i></div>
+          <span>{{stats.users}}</span>
+          <small>Users</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section heading -->
+    <p class="section-kicker mb-1">Quick access</p>
+    <h2 class="h4 fw-bold mb-4" style="letter-spacing:-0.01em;">What would you like to do?</h2>
+
+    <!-- Action cards -->
+    <div class="row g-3">
+      <div class="col-md-6 col-xl-3">
+        <a class="admin-card action-card" routerLink="/add-post">
+          <div class="card-icon-wrap"><i class="bi bi-pencil-square"></i></div>
+          <strong>Write a Post</strong>
+          <span>Rich editor with headings, code blocks, links, and inline formatting.</span>
+        </a>
+      </div>
+      <div class="col-md-6 col-xl-3">
+        <a class="admin-card action-card" routerLink="/manage-posts">
+          <div class="card-icon-wrap"><i class="bi bi-journals"></i></div>
+          <strong>Manage Posts</strong>
+          <span>Review, edit, publish, or remove posts. Draft and scheduled indicators included.</span>
+        </a>
+      </div>
+      <div class="col-md-6 col-xl-3">
+        <a class="admin-card action-card" routerLink="/analytics">
+          <div class="card-icon-wrap"><i class="bi bi-bar-chart-line"></i></div>
+          <strong>Analytics</strong>
+          <span>Track total views, top posts, and views broken down by category.</span>
+        </a>
+      </div>
+      <div class="col-md-6 col-xl-3">
+        <a class="admin-card action-card" routerLink="/manage-comments">
+          <div class="card-icon-wrap"><i class="bi bi-chat-left-dots"></i></div>
+          <strong>Moderate Comments</strong>
+          <span>Keep discussions productive by reviewing and removing comments.</span>
+        </a>
+      </div>
+      <div class="col-md-6 col-xl-3" *ngIf="isAdmin">
+        <a class="admin-card action-card" routerLink="/manage-category">
+          <div class="card-icon-wrap"><i class="bi bi-tag"></i></div>
+          <strong>Categories</strong>
+          <span>Add, rename, and reorder topics shown across the blog.</span>
+        </a>
+      </div>
+      <div class="col-md-6 col-xl-3" *ngIf="isAdmin">
+        <a class="admin-card action-card" routerLink="/manage-roles">
+          <div class="card-icon-wrap"><i class="bi bi-shield-check"></i></div>
+          <strong>Roles &amp; Permissions</strong>
+          <span>Promote writers to Editor or Admin, or reset to standard user access.</span>
+        </a>
+      </div>
+      <div class="col-md-6 col-xl-3" *ngIf="isAdmin">
+        <a class="admin-card action-card" routerLink="/manage-users">
+          <div class="card-icon-wrap"><i class="bi bi-person-lines-fill"></i></div>
+          <strong>Users</strong>
+          <span>View all registered writers and readers across the platform.</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>

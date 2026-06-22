@@ -1,0 +1,213 @@
+<!-- ======= HERO ======= -->
+<section class="home-hero">
+  <div class="container hero-content">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-8">
+        <div class="hero-eyebrow">
+          <i class="bi bi-lightning-charge-fill"></i> TechBlog
+        </div>
+        <h1>Readable engineering stories for builders who care about the details.</h1>
+        <p class="hero-sub">
+          Fresh posts, focused categories, searchable archives, and a cleaner writing workflow.
+        </p>
+        <form class="hero-search" (submit)="search(heroSearch.value); $event.preventDefault()">
+          <label class="visually-hidden" for="heroSearch">Search posts</label>
+          <input id="heroSearch" class="form-control form-control-lg" type="search"
+                 placeholder="Search Java, AI, Python, DevOps…" #heroSearch>
+          <button class="btn btn-light btn-lg" type="submit">
+            <i class="bi bi-search"></i>Search
+          </button>
+        </form>
+      </div>
+      <div class="col-lg-4">
+        <div class="hero-stat-card">
+          <div class="stat-icon"><i class="bi bi-file-richtext"></i></div>
+          <span class="stat-number">{{publishedPosts.length}}</span>
+          <span class="stat-label">Latest posts loaded</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= EDITOR'S PICKS — displays the article inline ======= -->
+<section class="py-5" *ngIf="resolvedFeaturedPosts.length > 0">
+  <div class="container">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+      <div>
+        <p class="section-kicker mb-1">Featured</p>
+        <h2 class="h3 fw-bold mb-0" style="letter-spacing:-0.015em;">Editor's picks</h2>
+      </div>
+      <span class="text-muted-soft small">Curated stories</span>
+    </div>
+
+    <!-- Each featured post is rendered as an inline article preview -->
+    <div class="editors-pick-article" *ngFor="let fp of resolvedFeaturedPosts.slice(0, 3); let i = index">
+      <div class="row g-0 align-items-stretch" [class.flex-lg-row-reverse]="i % 2 === 1">
+
+        <!-- Thumbnail — smaller, controlled size -->
+        <div class="col-lg-4 editors-pick-thumb-col">
+          <div class="editors-pick-thumb">
+            <img [src]="imageSrc(fp)" [alt]="fp.postTitle" loading="lazy">
+          </div>
+        </div>
+
+        <!-- Article content inline -->
+        <div class="col-lg-8 editors-pick-body">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <span class="badge featured-star-badge"><i class="bi bi-star-fill me-1"></i>Featured</span>
+            <span class="badge text-bg-light" *ngIf="fp.category">{{fp.category.categoryName}}</span>
+            <span class="ms-auto small text-muted-soft">{{fp.readingMinutes || 1}} min read</span>
+          </div>
+
+          <h2 class="editors-pick-title">{{fp.postTitle}}</h2>
+          <p class="editors-pick-excerpt" *ngIf="fp.postExcerpt">{{fp.postExcerpt}}</p>
+
+          <!-- Inline article content preview (first ~600 chars, stripped of HTML) -->
+          <div class="editors-pick-content-preview"
+               [innerHTML]="(fp.postContent || '') | slice:0:600">
+          </div>
+          <p class="editors-pick-read-more" *ngIf="(fp.postContent || '').length > 600">…</p>
+
+          <div class="editors-pick-meta mt-3">
+            <span><i class="bi bi-person me-1"></i>{{fp.user?.userName || 'TechBlog'}}</span>
+            <span><i class="bi bi-calendar3 me-1"></i>{{fp.postCreation | date:'mediumDate'}}</span>
+            <span><i class="bi bi-eye me-1"></i>{{fp.viewCount || 0}} views</span>
+          </div>
+
+          <a [routerLink]="['/post', fp.postId]" class="btn btn-dark btn-sm mt-3">
+            <i class="bi bi-book me-1"></i>Read full article
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= NEW ON TECHBLOG ======= -->
+<section class="py-5 surface-band">
+  <div class="container">
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+      <div>
+        <p class="section-kicker mb-1">Latest</p>
+        <h2 class="h3 fw-bold mb-0" style="letter-spacing:-0.015em;">New on TechBlog</h2>
+      </div>
+      <a class="btn btn-outline-dark" routerLink="/search">
+        <i class="bi bi-compass me-1"></i>Explore all
+      </a>
+    </div>
+
+    <div class="alert alert-warning d-flex align-items-center gap-2" *ngIf="errorMessage">
+      <i class="bi bi-exclamation-triangle-fill"></i>{{errorMessage}}
+    </div>
+
+    <!-- Skeleton loaders -->
+    <div class="row g-4" *ngIf="loading">
+      <div class="col-md-6 col-lg-4" *ngFor="let item of [1,2,3]">
+        <div class="post-card placeholder-glow" style="min-height:340px;">
+          <span class="placeholder d-block" style="height:180px;"></span>
+          <div class="post-body">
+            <span class="placeholder col-8 mb-2"></span>
+            <span class="placeholder col-12 mb-1"></span>
+            <span class="placeholder col-10 mb-3"></span>
+            <span class="placeholder col-5"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && newPosts.length === 0 && !errorMessage">
+      <i class="bi bi-journal-plus"></i>
+      <h3 class="h5 mt-2">No posts yet</h3>
+      <p class="text-muted-soft">Start by adding the first post from the dashboard.</p>
+      <a class="btn btn-dark btn-sm" routerLink="/add-post">Create a post</a>
+    </div>
+
+    <div class="row g-4" *ngIf="!loading && newPosts.length > 0">
+      <div class="col-md-6 col-lg-4" *ngFor="let post of newPosts.slice(0, 9); trackBy: trackPost">
+        <article class="post-card h-100">
+          <a [routerLink]="['/post', post.postId]" class="post-image">
+            <img [src]="imageSrc(post)" [alt]="post.postTitle" loading="lazy">
+          </a>
+          <div class="post-body d-flex flex-column h-100" style="flex:1;">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+              <a class="badge text-bg-light text-decoration-none" *ngIf="post.category"
+                 [routerLink]="['/category', post.category.categoryId]">
+                {{post.category.categoryName}}
+              </a>
+              <span class="small text-muted ms-auto">{{post.readingMinutes || 1}} min read</span>
+            </div>
+            <h3><a [routerLink]="['/post', post.postId]">{{post.postTitle}}</a></h3>
+            <p class="flex-grow-1">{{(post.postExcerpt || post.postContent || '') | slice:0:140}}<span *ngIf="(post.postExcerpt || post.postContent || '').length > 140">…</span></p>
+            <div class="post-meta">
+              <span><i class="bi bi-person me-1"></i>{{post.user?.userName || 'TechBlog'}}</span>
+              <span><i class="bi bi-calendar3 me-1"></i>{{post.postCreation | date:'mediumDate'}}</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= EXPLORE MORE + TOPICS SIDEBAR ======= -->
+<section class="py-5">
+  <div class="container">
+    <div class="row g-5">
+
+      <!-- Popular posts grid -->
+      <div class="col-lg-8">
+        <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
+          <div>
+            <p class="section-kicker mb-1">Popular</p>
+            <h2 class="h4 fw-bold mb-0">Explore more</h2>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-sm-6" *ngFor="let post of popularPosts.slice(0,4)">
+            <article class="compact-story">
+              <img [src]="imageSrc(post)" [alt]="post.postTitle" loading="lazy">
+              <div>
+                <a [routerLink]="['/post', post.postId]">{{post.postTitle}}</a>
+                <p>{{(post.postExcerpt || post.postContent || '').slice(0, 75)}}<span *ngIf="(post.postExcerpt || post.postContent || '').length > 75">…</span></p>
+                <div style="font-size:0.78rem;color:#94a3b8;margin-top:0.3rem;">
+                  <i class="bi bi-eye me-1"></i>{{post.viewCount || 0}} views
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <!-- Topics + CTA sidebar -->
+      <div class="col-lg-4">
+        <div class="sidebar-panel mb-4">
+          <h2 class="h6 fw-bold mb-3">Browse topics</h2>
+          <div class="d-flex flex-wrap gap-2">
+            <a *ngFor="let category of categories" class="topic-pill"
+               [routerLink]="['/category', category.categoryId]">
+              <i class="bi bi-hash"></i>{{category.categoryName}}
+            </a>
+            <p class="text-muted-soft mb-0 small w-100" *ngIf="categories.length === 0">
+              No categories yet.
+            </p>
+          </div>
+        </div>
+
+        <div class="cta-panel">
+          <i class="bi bi-pencil-square cta-icon"></i>
+          <h3 class="h6 fw-bold mb-2">Share your knowledge</h3>
+          <p class="text-muted-soft mb-3" style="font-size:0.875rem;">
+            Write a post, build an audience, and contribute to the community.
+          </p>
+          <a class="btn btn-dark btn-sm w-100" routerLink="/signup">
+            <i class="bi bi-person-plus me-1"></i>Join free
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>

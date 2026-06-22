@@ -1,0 +1,13 @@
+.stat-large {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #111827;
+}
+
+.bar-row { display: grid; grid-template-columns: 130px 1fr 60px; align-items: center; gap: 0.75rem; }
+.bar-track { background: #f1f5f9; border-radius: 20px; height: 10px; overflow: hidden; }
+.bar-fill  { background: #0f766e; border-radius: 20px; height: 100%; transition: width 600ms ease; }
+.bar-label { font-size: 0.875rem; color: #374151; font-weight: 500; }
+.bar-value { font-size: 0.875rem; font-weight: 700; color: #0f766e; text-align: right; }

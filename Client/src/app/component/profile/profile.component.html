@@ -1,0 +1,326 @@
+<div class="profile-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="profile-hero">
+    <div class="container">
+      <div class="profile-hero-inner">
+
+        <div class="avatar-wrap">
+          <div class="avatar-ring">
+            <img *ngIf="avatarPreview" [src]="avatarPreview" alt="Profile photo" class="avatar-img">
+            <div *ngIf="!avatarPreview" class="avatar-initials">
+              {{(profile?.userName || 'U')[0].toUpperCase()}}
+            </div>
+          </div>
+          <label *ngIf="editMode" class="avatar-upload-btn" title="Change photo">
+            <i class="bi bi-camera-fill"></i>
+            <input type="file" accept="image/*" (change)="onAvatarChange($event)" hidden>
+          </label>
+        </div>
+
+        <div class="profile-identity">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <h1 class="profile-name mb-0">{{profile?.userName}}</h1>
+            <span class="role-badge">{{profile?.role === 'ADMIN' ? 'Admin' : 'Author'}}</span>
+          </div>
+          <!-- Title · Organisation tagline -->
+          <p class="profile-tagline" *ngIf="displayTagline">
+            <i class="bi bi-briefcase me-1"></i>{{displayTagline}}
+          </p>
+          <p class="profile-email"><i class="bi bi-envelope me-1"></i>{{profile?.userEmail}}</p>
+          <!-- Short bio preview -->
+          <p class="profile-bio-hero" *ngIf="storedBio">
+            {{storedBio | slice:0:180}}<span *ngIf="storedBio.length > 180">…</span>
+          </p>
+          <!-- Social links -->
+          <div class="hero-social" *ngIf="storedLinkedIn || storedWebsite">
+            <a *ngIf="storedLinkedIn" [href]="storedLinkedIn" target="_blank" rel="noopener" class="social-link">
+              <i class="bi bi-linkedin"></i> LinkedIn
+            </a>
+            <a *ngIf="storedWebsite" [href]="storedWebsite" target="_blank" rel="noopener" class="social-link">
+              <i class="bi bi-globe2"></i> Website
+            </a>
+          </div>
+          <div class="profile-stats mt-3">
+            <div class="stat-pill">
+              <span class="stat-val">{{posts.length}}</span>
+              <span class="stat-lbl">Posts</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-val">{{totalViews}}</span>
+              <span class="stat-lbl">Total views</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-val">{{joinYear}}</span>
+              <span class="stat-lbl">Member since</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-hero-actions">
+          <button class="btn btn-outline-light btn-sm" *ngIf="!editMode" (click)="startEdit()">
+            <i class="bi bi-pencil"></i> Edit profile
+          </button>
+          <a class="btn btn-light btn-sm" routerLink="/add-post">
+            <i class="bi bi-plus-lg"></i> New post
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ BODY ══ -->
+  <div class="container profile-body">
+
+    <div class="alert alert-success d-flex gap-2 align-items-center mb-4" *ngIf="successMessage">
+      <i class="bi bi-check-circle-fill"></i>{{successMessage}}
+    </div>
+    <div class="alert alert-danger d-flex gap-2 align-items-center mb-4" *ngIf="errorMessage">
+      <i class="bi bi-exclamation-triangle-fill"></i>{{errorMessage}}
+    </div>
+
+    <div class="row g-4">
+
+      <!-- ══ LEFT SIDEBAR ══ -->
+      <div class="col-lg-3">
+
+        <!-- VIEW: About -->
+        <ng-container *ngIf="!editMode">
+          <div class="sidebar-card mb-3" *ngIf="storedBio || storedTitle || storedOrg || storedExpertise || storedQualification">
+            <div class="sidebar-card-header"><i class="bi bi-person-lines-fill"></i> About</div>
+            <div class="sidebar-card-body">
+              <p class="about-text" *ngIf="storedBio">{{storedBio}}</p>
+
+              <div class="detail-group" *ngIf="storedTitle || storedOrg">
+                <div class="detail-label">Current role</div>
+                <div class="detail-value">
+                  {{storedTitle}}<span *ngIf="storedTitle && storedOrg"> · </span>{{storedOrg}}
+                </div>
+              </div>
+
+              <div class="detail-group" *ngIf="storedExpertise">
+                <div class="detail-label">Expertise</div>
+                <div class="detail-tags">
+                  <span class="tag-chip" *ngFor="let skill of storedExpertise.split(',')">
+                    {{skill.trim()}}
+                  </span>
+                </div>
+              </div>
+
+              <div class="detail-group" *ngIf="storedQualification">
+                <div class="detail-label">Qualification</div>
+                <div class="detail-value">{{storedQualification}}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-card mb-3">
+            <div class="sidebar-card-header"><i class="bi bi-info-circle"></i> Details</div>
+            <div class="sidebar-card-body">
+              <div class="detail-row" *ngIf="profile?.dob">
+                <i class="bi bi-cake2"></i>
+                <span>{{profile?.dob | date:'longDate'}}</span>
+              </div>
+              <div class="detail-row">
+                <i class="bi bi-shield-check"></i>
+                <span>{{profile?.role === 'ADMIN' ? 'Administrator' : 'Normal User'}}</span>
+              </div>
+              <div class="detail-row">
+                <i class="bi bi-envelope"></i>
+                <span class="text-truncate">{{profile?.userEmail}}</span>
+              </div>
+              <div class="detail-row" *ngIf="storedLinkedIn">
+                <i class="bi bi-linkedin"></i>
+                <a [href]="storedLinkedIn" target="_blank" rel="noopener" class="detail-link">LinkedIn</a>
+              </div>
+              <div class="detail-row" *ngIf="storedWebsite">
+                <i class="bi bi-globe2"></i>
+                <a [href]="storedWebsite" target="_blank" rel="noopener" class="detail-link">Website</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state nudge -->
+          <div class="sidebar-empty-nudge"
+               *ngIf="!storedBio && !storedTitle && !storedOrg && !storedExpertise && !storedQualification">
+            <i class="bi bi-pencil-square"></i>
+            <p>Your profile is empty.</p>
+            <button class="btn btn-dark btn-sm" (click)="startEdit()">Fill in your details</button>
+          </div>
+
+        </ng-container>
+
+        <!-- EDIT FORM -->
+        <div class="sidebar-card" *ngIf="editMode">
+          <div class="sidebar-card-header"><i class="bi bi-pencil-square"></i> Edit profile</div>
+          <div class="sidebar-card-body">
+
+            <!-- Avatar -->
+            <div class="edit-avatar-preview mb-4">
+              <div class="edit-avatar-thumb">
+                <img *ngIf="avatarPreview" [src]="avatarPreview" alt="Preview">
+                <div *ngIf="!avatarPreview" class="edit-avatar-initials">
+                  {{(profile?.userName || 'U')[0].toUpperCase()}}
+                </div>
+              </div>
+              <label class="avatar-file-label">
+                <i class="bi bi-camera"></i>
+                {{avatarFile ? avatarFile.name : 'Change photo'}}
+                <input type="file" accept="image/*" (change)="onAvatarChange($event)" hidden>
+              </label>
+              <p class="form-text text-center">JPEG or PNG · max 2 MB</p>
+            </div>
+
+            <div class="form-section-label">Identity</div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Display name <span class="text-danger">*</span></label>
+              <input class="form-control form-control-sm" type="text" [(ngModel)]="editName" placeholder="Your full name">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Date of birth</label>
+              <input class="form-control form-control-sm" type="date" [(ngModel)]="editDob">
+            </div>
+
+            <div class="form-section-label mt-3">Professional</div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Job title / designation</label>
+              <input class="form-control form-control-sm" type="text" [(ngModel)]="editTitle"
+                     placeholder="e.g. Senior Software Engineer">
+              <div class="form-text">Shown under your name on every post.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Organisation / Company</label>
+              <input class="form-control form-control-sm" type="text" [(ngModel)]="editOrg"
+                     placeholder="e.g. Google, IIT Madras">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Expertise / Skills</label>
+              <input class="form-control form-control-sm" type="text" [(ngModel)]="editExpertise"
+                     placeholder="e.g. Java, Spring Boot, Cloud">
+              <div class="form-text">Comma-separated. Displayed as tags.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Qualification</label>
+              <input class="form-control form-control-sm" type="text" [(ngModel)]="editQualification"
+                     placeholder="e.g. M.Sc. CS, IIT Madras">
+            </div>
+
+            <div class="form-section-label mt-3">Bio &amp; Links</div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Short bio</label>
+              <textarea class="form-control form-control-sm" rows="4" [(ngModel)]="editBio"
+                placeholder="A brief paragraph about yourself, your background and what you write about…"></textarea>
+              <div class="form-text">Shown in the sidebar on your posts.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">LinkedIn URL</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-linkedin"></i></span>
+                <input class="form-control" type="url" [(ngModel)]="editLinkedIn"
+                       placeholder="https://linkedin.com/in/yourname">
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label small fw-semibold">Personal website / portfolio</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-globe2"></i></span>
+                <input class="form-control" type="url" [(ngModel)]="editWebsite"
+                       placeholder="https://yoursite.com">
+              </div>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button class="btn btn-dark btn-sm" (click)="saveProfile()" [disabled]="saving">
+                <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
+                <i *ngIf="!saving" class="bi bi-check-lg"></i>
+                {{saving ? 'Saving…' : 'Save changes'}}
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" (click)="cancelEdit()">Cancel</button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══ POSTS PANEL ══ -->
+      <div class="col-lg-9">
+
+        <div class="posts-panel-header mb-3">
+          <div>
+            <p class="section-kicker mb-0">Writing</p>
+            <h2 class="h5 fw-bold mb-0">Published posts</h2>
+          </div>
+          <span class="posts-count-badge">{{posts.length}} post{{posts.length !== 1 ? 's' : ''}}</span>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loading">
+          <div class="post-list-item placeholder-glow" *ngFor="let i of [1,2,3]">
+            <span class="placeholder post-list-thumb-placeholder"></span>
+            <div style="flex:1">
+              <span class="placeholder col-3 d-block mb-2" style="height:10px;"></span>
+              <span class="placeholder col-7 d-block mb-2" style="height:16px;"></span>
+              <span class="placeholder col-10 d-block mb-2" style="height:12px;"></span>
+              <span class="placeholder col-4" style="height:10px;"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty -->
+        <div class="empty-profile-posts" *ngIf="!loading && posts.length === 0">
+          <i class="bi bi-journal-plus"></i>
+          <p class="mb-2 fw-semibold">No published posts yet</p>
+          <p class="mb-3 small text-muted">Start writing and your posts will appear here.</p>
+          <a class="btn btn-dark btn-sm" routerLink="/add-post">
+            <i class="bi bi-plus-lg"></i> Write your first post
+          </a>
+        </div>
+
+        <!-- Post list -->
+        <div *ngIf="!loading && posts.length > 0">
+          <article class="post-list-item" *ngFor="let post of posts; trackBy: trackPost">
+            <a [routerLink]="['/post', post.postId]" class="post-list-thumb">
+              <img [src]="imageSrc(post)" [alt]="post.postTitle" loading="lazy">
+            </a>
+            <div class="post-list-text">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="post-category-tag" *ngIf="post.category">
+                  <i class="bi bi-hash"></i>{{post.category.categoryName}}
+                </span>
+                <span class="post-read-time">{{post.readingMinutes || 1}} min read</span>
+              </div>
+              <h3 class="post-list-title">
+                <a [routerLink]="['/post', post.postId]">{{post.postTitle}}</a>
+              </h3>
+              <p class="post-list-excerpt">
+                {{(post.postExcerpt || post.postContent || '') | slice:0:130}}<span
+                  *ngIf="(post.postExcerpt || post.postContent || '').length > 130">…</span>
+              </p>
+              <div class="post-list-meta">
+                <span><i class="bi bi-calendar3"></i>{{post.postCreation | date:'mediumDate'}}</span>
+                <span><i class="bi bi-eye"></i>{{post.viewCount || 0}} views</span>
+                <span class="ms-auto">
+                  <a [routerLink]="['/update-post', post.postId]" class="post-action-link">
+                    <i class="bi bi-pencil"></i> Edit
+                  </a>
+                </span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

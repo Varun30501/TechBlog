@@ -1,0 +1,48 @@
+<section class="content-header">
+  <div class="container">
+    <a class="back-link mb-3" routerLink="/search"><i class="bi bi-arrow-left"></i> Search</a>
+    <h1 class="display-6 mb-2">Results for "{{title}}"</h1>
+    <p class="text-muted-soft mb-0">{{posts.length}} matching posts</p>
+  </div>
+</section>
+
+<section class="page-shell">
+  <div class="container">
+    <div class="alert alert-danger" *ngIf="errorMessage">{{errorMessage}}</div>
+
+    <div class="row g-4" *ngIf="loading">
+      <div class="col-md-6 col-lg-4" *ngFor="let item of [1,2,3]">
+        <div class="placeholder-card placeholder-glow">
+          <span class="placeholder col-12 image-placeholder"></span>
+          <span class="placeholder col-8"></span>
+          <span class="placeholder col-10"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && posts.length === 0">
+      <i class="bi bi-search"></i>
+      <h2>No matching posts</h2>
+      <p class="text-muted-soft">Try a different topic, title, or keyword.</p>
+      <a class="btn btn-dark" routerLink="/search">Search again</a>
+    </div>
+
+    <div class="row g-4" *ngIf="!loading && posts.length > 0">
+      <div class="col-md-6 col-xl-4" *ngFor="let post of posts">
+        <article class="post-card h-100">
+          <a [routerLink]="['/post', post.postId]" class="post-image">
+            <img [src]="imageSrc(post)" [alt]="post.postTitle">
+          </a>
+          <div class="post-body">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+              <span class="badge text-bg-light">{{post.category?.categoryName || 'Post'}}</span>
+              <span class="small text-muted-soft">{{post.readingMinutes || 1}} min read</span>
+            </div>
+            <h2><a [routerLink]="['/post', post.postId]">{{post.postTitle}}</a></h2>
+            <p>{{(post.postExcerpt || post.postContent) | slice:0:160}}</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
