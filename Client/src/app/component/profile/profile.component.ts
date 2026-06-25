@@ -4,6 +4,7 @@ import { Post } from 'src/app/model/Post';
 import { User } from 'src/app/model/User';
 import { PostapiService } from 'src/app/service/postapi.service';
 import { postImageSrc } from 'src/app/util/post-image';
+import { avatarImageSrc } from 'src/app/util/avatar-image';
 
 @Component({
   selector: 'app-profile',
@@ -21,10 +22,11 @@ export class ProfileComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
 
-  /* avatar */
+  /* avatar — stored server-side on the User entity, not localStorage, so
+     it shows up correctly for OTHER users viewing this person's posts/comments */
   avatarPreview: string | null = null;
   avatarFile: File | null = null;
-  readonly AVATAR_KEY = 'userAvatar_';
+  avatarUploading = false;
 
   /* structured edit fields */
   editName        = '';
@@ -38,6 +40,7 @@ export class ProfileComponent implements OnInit {
   editDob         = '';
 
   imageSrc = postImageSrc;
+  avatarSrc = avatarImageSrc;
 
   constructor(
     private service: PostapiService,
@@ -55,6 +58,7 @@ export class ProfileComponent implements OnInit {
   }
 
   private loadProfile(userId: string): void {
+    // Start from localStorage so the page isn't blank while the network call is in flight.
     this.profile = new User(
       Number(userId),
       localStorage.getItem('userName') || '',
@@ -64,7 +68,22 @@ export class ProfileComponent implements OnInit {
       localStorage.getItem('userAbout') || '',
       localStorage.getItem('userRole') || 'NORMAL'
     );
-    this.avatarPreview = localStorage.getItem(this.AVATAR_KEY + userId);
+
+    // Then refresh from the backend — this is the source of truth for the avatar,
+    // since avatars are stored server-side and must be visible to OTHER users too.
+    this.service.getUserById(userId).subscribe({
+      next: (user: User) => {
+        if (this.profile) {
+          this.profile.userName = user.userName;
+          this.profile.dob = user.dob;
+          this.profile.about = user.about;
+          this.profile.avatarImage = user.avatarImage;
+        }
+        this.avatarPreview = this.avatarSrc(user);
+        this.cdr.markForCheck();
+      },
+      error: () => { /* fall back silently to the localStorage-derived profile above */ }
+    });
 
     this.service.getPostsByUserId(userId).subscribe({
       next: (posts) => {
@@ -92,12 +111,50 @@ export class ProfileComponent implements OnInit {
 
   onAvatarChange(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
+    if (!file || !this.profile?.userId) return;
     if (file.size > 2 * 1024 * 1024) { this.errorMessage = 'Image must be under 2 MB.'; return; }
+
     this.avatarFile = file;
+    // Instant local preview while the upload is in flight.
     const reader = new FileReader();
     reader.onload = (e) => { this.avatarPreview = e.target?.result as string; this.cdr.markForCheck(); };
     reader.readAsDataURL(file);
+
+    this.avatarUploading = true;
+    this.service.uploadAvatar(this.profile.userId, file).subscribe({
+      next: (user: User) => {
+        if (this.profile) { this.profile.avatarImage = user.avatarImage; }
+        this.avatarPreview = this.avatarSrc(user);
+        this.avatarUploading = false;
+        this.avatarFile = null;
+        this.successMessage = 'Profile photo updated.';
+        this.cdr.markForCheck();
+        setTimeout(() => { this.successMessage = ''; this.cdr.markForCheck(); }, 3500);
+      },
+      error: () => {
+        this.avatarUploading = false;
+        this.errorMessage = 'Photo could not be uploaded. Please try again.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  removeAvatar(): void {
+    if (!this.profile?.userId) return;
+    this.avatarUploading = true;
+    this.service.deleteAvatar(this.profile.userId).subscribe({
+      next: () => {
+        if (this.profile) { this.profile.avatarImage = undefined; }
+        this.avatarPreview = null;
+        this.avatarUploading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.avatarUploading = false;
+        this.errorMessage = 'Photo could not be removed. Please try again.';
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   startEdit(): void {
@@ -119,17 +176,12 @@ export class ProfileComponent implements OnInit {
   cancelEdit(): void {
     this.editMode = false;
     this.avatarFile = null;
-    this.avatarPreview = localStorage.getItem(this.AVATAR_KEY + String(this.profile?.userId));
+    this.avatarPreview = this.avatarSrc(this.profile);
   }
 
   saveProfile(): void {
-    if (!this.profile) return;
+    if (!this.profile?.userId) return;
     this.saving = true;
-    const userId = String(this.profile.userId);
-
-    if (this.avatarFile && this.avatarPreview) {
-      localStorage.setItem(this.AVATAR_KEY + userId, this.avatarPreview);
-    }
 
     localStorage.setItem('userName',          this.editName);
     localStorage.setItem('userDob',           this.editDob);
@@ -141,16 +193,31 @@ export class ProfileComponent implements OnInit {
     localStorage.setItem('userLinkedIn',      this.editLinkedIn);
     localStorage.setItem('userWebsite',       this.editWebsite);
 
-    this.profile.userName = this.editName;
-    this.profile.dob      = this.editDob;
-    this.profile.about    = this.editBio;
+    // Persist the fields the backend actually has columns for.
+    // dob is a LocalDate on the backend, so we omit it entirely when blank
+    // rather than sending "" (which Jackson can't parse as a LocalDate).
+    const payload: Partial<User> = { userName: this.editName, about: this.editBio };
+    if (this.editDob) { payload.dob = this.editDob; }
 
-    this.saving = false;
-    this.editMode = false;
-    this.successMessage = 'Profile updated successfully.';
-    this.avatarFile = null;
-    this.cdr.markForCheck();
-    setTimeout(() => { this.successMessage = ''; this.cdr.markForCheck(); }, 3500);
+    this.service.updateUser(this.profile.userId, payload).subscribe({
+      next: (user: User) => {
+        if (this.profile) {
+          this.profile.userName = user.userName;
+          this.profile.dob = user.dob;
+          this.profile.about = user.about;
+        }
+        this.saving = false;
+        this.editMode = false;
+        this.successMessage = 'Profile updated successfully.';
+        this.cdr.markForCheck();
+        setTimeout(() => { this.successMessage = ''; this.cdr.markForCheck(); }, 3500);
+      },
+      error: () => {
+        this.saving = false;
+        this.errorMessage = 'Profile could not be saved. Please try again.';
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   get joinYear(): string { return new Date().getFullYear().toString(); }

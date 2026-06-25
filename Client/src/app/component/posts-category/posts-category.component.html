@@ -6,7 +6,7 @@
   </div>
 </section>
 
-<section class="py-5">
+<section class="py-5" id="category-posts-top">
   <div class="container">
     <div class="row g-4" *ngIf="loading">
       <div class="col-md-6 col-lg-4" *ngFor="let item of [1,2,3]">
@@ -38,5 +38,7 @@
         </article>
       </div>
     </div>
+
+    <app-pagination *ngIf="!loading" [page]="page" [totalPages]="totalPages" (pageChange)="onPageChange($event)"></app-pagination>
   </div>
 </section>

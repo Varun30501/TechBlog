@@ -2,7 +2,6 @@ package org.blog.controller;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -12,8 +11,10 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.blog.model.Post;
+import org.blog.model.PostLike;
 import org.blog.model.Tag;
 import org.blog.repository.CategoryRepository;
+import org.blog.repository.PostLikeRepository;
 import org.blog.repository.PostRepository;
 import org.blog.repository.TagRepository;
 import org.blog.repository.UserRepository;
@@ -43,18 +44,21 @@ public class PostController {
     private final CategoryRepository categoryRepo;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
+    private final PostLikeRepository postLikeRepository;
 
     public PostController(
             PostService service,
             PostRepository postRepository,
             CategoryRepository categoryRepo,
             UserRepository userRepository,
-            TagRepository tagRepository) {
+            TagRepository tagRepository,
+            PostLikeRepository postLikeRepository) {
         this.service = service;
         this.postRepository = postRepository;
         this.categoryRepo = categoryRepo;
         this.userRepository = userRepository;
         this.tagRepository = tagRepository;
+        this.postLikeRepository = postLikeRepository;
     }
 
     // ─────────────────────────────────────────────────────────
@@ -167,13 +171,14 @@ public class PostController {
     public ResponseEntity<Page<Post>> getFeed(
             @RequestParam(value = "query", required = false) String query,
             @RequestParam(value = "categoryId", required = false) Long categoryId,
+            @RequestParam(value = "tagId", required = false) Long tagId,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "9") int size) {
         Pageable pageable = PageRequest.of(
                 Math.max(page, 0),
                 Math.max(1, Math.min(size, 30)),
                 Sort.by(Sort.Direction.DESC, "postCreation"));
-        return ResponseEntity.ok(this.service.getFeed(query, categoryId, pageable));
+        return ResponseEntity.ok(this.service.getFeed(query, categoryId, tagId, pageable));
     }
 
     @GetMapping("/posts/featured")
@@ -242,7 +247,12 @@ public class PostController {
     public ResponseEntity<List<Post>> getRelated(@PathVariable Long postId) {
         return this.service.getPostByPostId(postId)
                 .<ResponseEntity<List<Post>>>map(post -> {
-                    Long catId = post.getCategory() != null ? post.getCategory().getCategoryId() : -1L;
+                    Long catId;
+                    if (post.getCategory() != null) {
+                        catId = post.getCategory().getCategoryId();
+                    } else {
+                        catId = -1L;
+                    }
                     return ResponseEntity.ok(this.service.getRelatedPosts(catId, postId, 3));
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
@@ -253,6 +263,49 @@ public class PostController {
     public ResponseEntity<List<Post>> topPosts(
             @RequestParam(value = "limit", defaultValue = "10") int limit) {
         return ResponseEntity.ok(this.service.getTopPostsByViews(Math.min(limit, 50)));
+    }
+
+    // ─────────────────────────────────────────────────────────
+    //  LIKES (toggle)
+    // ─────────────────────────────────────────────────────────
+    @PostMapping("/post/{postId}/like/{userId}")
+    public ResponseEntity<Map<String, Object>> toggleLike(
+            @PathVariable("postId") Long postId,
+            @PathVariable("userId") Long userId) {
+
+        var postOpt = this.postRepository.findById(Objects.requireNonNull(postId));
+        var userOpt = this.userRepository.findById(Objects.requireNonNull(userId));
+        if (postOpt.isEmpty() || userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("status", "failed", "message", "Post or user not found."));
+        }
+
+        var existing = this.postLikeRepository.findByPostPostIdAndUserUserId(postId, userId);
+        boolean liked;
+        if (existing.isPresent()) {
+            this.postLikeRepository.delete(existing.get());
+            liked = false;
+        } else {
+            PostLike like = new PostLike();
+            like.setPost(postOpt.get());
+            like.setUser(userOpt.get());
+            this.postLikeRepository.save(like);
+            liked = true;
+        }
+
+        long count = this.postLikeRepository.countByPostPostId(postId);
+        return ResponseEntity.ok(Map.of("liked", liked, "likeCount", count));
+    }
+
+    @GetMapping("/post/{postId}/like-status")
+    public ResponseEntity<Map<String, Object>> likeStatus(
+            @PathVariable("postId") Long postId,
+            @RequestParam(value = "userId", required = false) Long userId) {
+
+        long count = this.postLikeRepository.countByPostPostId(postId);
+        boolean liked = userId != null
+                && this.postLikeRepository.findByPostPostIdAndUserUserId(postId, userId).isPresent();
+        return ResponseEntity.ok(Map.of("liked", liked, "likeCount", count));
     }
 
     // ─────────────────────────────────────────────────────────

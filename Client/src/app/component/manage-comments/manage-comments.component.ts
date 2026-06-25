@@ -18,6 +18,10 @@ export class ManageCommentsComponent implements OnInit {
   loading = true;
   errorMessage = '';
 
+  /* client-side pagination — these endpoints return the full list */
+  page = 0;
+  pageSize = 10;
+
   constructor(
     private service: PostapiService,
     private router: Router,
@@ -35,11 +39,26 @@ export class ManageCommentsComponent implements OnInit {
     return this.userRole === 'ADMIN';
   }
 
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.comments.length / this.pageSize));
+  }
+
+  get pagedComments(): Comment[] {
+    const start = this.page * this.pageSize;
+    return this.comments.slice(start, start + this.pageSize);
+  }
+
+  onPageChange(page: number): void {
+    this.page = page;
+    this.cdr.markForCheck();
+  }
+
   loadComments(): void {
     const request = this.isAdmin ? this.service.getAllComments() : this.service.getCommentsByUserId(this.userId);
     request.subscribe({
       next: (comments) => {
         this.comments = comments;
+        this.page = 0;
         this.loading = false;
         this.cdr.markForCheck();
       },
@@ -56,6 +75,7 @@ export class ManageCommentsComponent implements OnInit {
     this.service.deleteCommentByCommentId(commentId).subscribe({
       next: () => {
         this.comments = this.comments.filter((c) => c.commentId !== commentId);
+        if (this.page > 0 && this.page >= this.totalPages) { this.page = this.totalPages - 1; }
         this.cdr.markForCheck();
       },
       error: (error) => {

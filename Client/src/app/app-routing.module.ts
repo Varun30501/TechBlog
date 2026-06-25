@@ -11,6 +11,8 @@ import { PostSearchComponent } from './component/post-search/post-search.compone
 import { PostsCategoryComponent } from './component/posts-category/posts-category.component';
 import { SearchResultComponent } from './component/search-result/search-result.component';
 import { SigninComponent } from './component/signin/signin.component';
+import { ForgotPasswordComponent } from './component/forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './component/reset-password/reset-password.component';
 import { SignupComponent } from './component/signup/signup.component';
 import { SinglePostComponent } from './component/single-post/single-post.component';
 import { AnalyticsComponent } from './component/analytics/analytics.component';
@@ -24,6 +26,8 @@ const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: 'signup', component: SignupComponent },
   { path: 'signin', component: SigninComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'category/:categoryId', component: PostsCategoryComponent },
   { path: 'search', component: PostSearchComponent },

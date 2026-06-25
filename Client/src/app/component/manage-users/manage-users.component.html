@@ -29,7 +29,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let user of users">
+          <tr *ngFor="let user of pagedUsers">
             <td>
               <strong>{{user.userName}}</strong>
               <div class="small text-muted-soft">ID {{user.userId}}</div>
@@ -46,6 +46,9 @@
         </tbody>
       </table>
     </div>
+
+    <app-pagination *ngIf="!loading && users.length > pageSize" [page]="page" [totalPages]="totalPages"
+                     (pageChange)="onPageChange($event)"></app-pagination>
 
     <div class="placeholder-card placeholder-glow" *ngIf="loading">
       <span class="placeholder col-12"></span>

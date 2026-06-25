@@ -17,6 +17,10 @@ export class ManageUsersComponent implements OnInit {
   loading = true;
   errorMessage = '';
 
+  /* client-side pagination — /users returns the full list */
+  page = 0;
+  pageSize = 10;
+
   constructor(
     private service: PostapiService,
     private router: Router,
@@ -26,10 +30,25 @@ export class ManageUsersComponent implements OnInit {
     }
   }
 
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.users.length / this.pageSize));
+  }
+
+  get pagedUsers(): User[] {
+    const start = this.page * this.pageSize;
+    return this.users.slice(start, start + this.pageSize);
+  }
+
+  onPageChange(page: number): void {
+    this.page = page;
+    this.cdr.markForCheck();
+  }
+
   ngOnInit(): void {
     this.service.getAllUsers().subscribe({
       next: (users) => {
         this.users = users;
+        this.page = 0;
         this.loading = false;
         this.cdr.markForCheck();
       },
@@ -46,6 +65,7 @@ export class ManageUsersComponent implements OnInit {
     this.service.deleteUserById(userId).subscribe({
       next: () => {
         this.users = this.users.filter((u) => u.userId !== userId);
+        if (this.page > 0 && this.page >= this.totalPages) { this.page = this.totalPages - 1; }
         this.cdr.markForCheck();
       },
       error: (error) => {

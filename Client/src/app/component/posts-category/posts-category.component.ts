@@ -18,6 +18,10 @@ export class PostsCategoryComponent implements OnInit {
   loading = true;
   errorMessage = '';
 
+  page = 0;
+  pageSize = 12;
+  totalPages = 0;
+
   constructor(
     private activatedRoute: ActivatedRoute,
     private service: PostapiService,
@@ -28,6 +32,7 @@ export class PostsCategoryComponent implements OnInit {
       this.categoryId = Number(params.get('categoryId'));
       this.posts = [];
       this.category = null;
+      this.page = 0;
       this.loading = true;
       this.errorMessage = '';
       this.cdr.markForCheck();
@@ -38,10 +43,11 @@ export class PostsCategoryComponent implements OnInit {
   loadCategoryPosts(): void {
     if (!this.categoryId) { return; }
 
-    this.service.postsByCategory(this.categoryId).subscribe({
-      next: (posts) => {
-        this.posts = posts;
-        this.category = posts[0]?.category || this.category;
+    this.service.getFeed('', this.categoryId, null, this.page, this.pageSize).subscribe({
+      next: (response) => {
+        this.posts = response.content || [];
+        this.totalPages = response.totalPages || 0;
+        this.category = this.posts[0]?.category || this.category;
         this.loading = false;
         this.cdr.markForCheck();
       },
@@ -61,6 +67,12 @@ export class PostsCategoryComponent implements OnInit {
       },
       error: () => {}
     });
+  }
+
+  onPageChange(page: number): void {
+    this.page = page;
+    this.loadCategoryPosts();
+    document.getElementById('category-posts-top')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   imageSrc = postImageSrc;

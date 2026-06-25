@@ -103,6 +103,13 @@ public class Post {
     @JoinColumn(name = "userId")
     private User user;
 
+    // ── NEW: populated by the controller per-request, never persisted ──
+    @jakarta.persistence.Transient
+    private long likeCount;
+
+    @jakarta.persistence.Transient
+    private boolean likedByCurrentUser;
+
     @PrePersist
     @PreUpdate
     private void syncBlogMetadata() {

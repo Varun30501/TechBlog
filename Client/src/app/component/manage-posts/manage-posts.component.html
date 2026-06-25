@@ -30,7 +30,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let post of posts">
+          <tr *ngFor="let post of pagedPosts">
             <td>
               <div class="d-flex align-items-center gap-3">
                 <img class="thumb" [src]="imageSrc(post)" [alt]="post.postTitle">
@@ -61,6 +61,9 @@
         </tbody>
       </table>
     </div>
+
+    <app-pagination *ngIf="!loading && posts.length > pageSize" [page]="page" [totalPages]="totalPages"
+                     (pageChange)="onPageChange($event)"></app-pagination>
 
     <div class="placeholder-card placeholder-glow" *ngIf="loading">
       <span class="placeholder col-12"></span>

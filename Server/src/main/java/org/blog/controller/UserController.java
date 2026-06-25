@@ -1,12 +1,18 @@
 package org.blog.controller;
 
+import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
+import org.blog.model.PasswordResetToken;
 import org.blog.model.User;
+import org.blog.repository.PasswordResetTokenRepository;
 import org.blog.repository.UserRepository;
+import org.blog.service.EmailService;
 import org.blog.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 
@@ -27,14 +34,25 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/blog")
 public class UserController {
 
+	private static final int RESET_TOKEN_VALID_MINUTES = 30;
+
 	private final UserService userService;
 	private final UserRepository repository;
 	private final PasswordEncoder passwordEncoder;
+	private final PasswordResetTokenRepository resetTokenRepository;
+	private final EmailService emailService;
 
-	public UserController(UserService userService, UserRepository repository, PasswordEncoder passwordEncoder) {
+	public UserController(
+			UserService userService,
+			UserRepository repository,
+			PasswordEncoder passwordEncoder,
+			PasswordResetTokenRepository resetTokenRepository,
+			EmailService emailService) {
 		this.userService = userService;
 		this.repository = repository;
 		this.passwordEncoder = passwordEncoder;
+		this.resetTokenRepository = resetTokenRepository;
+		this.emailService = emailService;
 	}
 
 	@PostMapping("/signup")
@@ -80,6 +98,13 @@ public class UserController {
 		return ResponseEntity.ok(this.repository.findAll());
 	}
 
+	@GetMapping("/user/{userId}")
+	public ResponseEntity<?> getUserById(@PathVariable Long userId) {
+		return this.repository.findById(Objects.requireNonNull(userId))
+				.<ResponseEntity<?>>map(ResponseEntity::ok)
+				.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(failed("User does not exist.")));
+	}
+
 	@PutMapping("/user/{userId}")
 	public ResponseEntity<?> updateUser(@PathVariable Long userId, @RequestBody User user) {
 		return this.repository.findById(Objects.requireNonNull(userId))
@@ -96,6 +121,42 @@ public class UserController {
 						existingUser.setUserPassword(passwordEncoder.encode(user.getUserPassword()));
 					User updated = this.userService.updateUser(existingUser);
 					return ResponseEntity.ok(updated);
+				})
+				.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(failed("User does not exist.")));
+	}
+
+	// ─────────────────────────────────────────────────────────
+	//  AVATAR
+	// ─────────────────────────────────────────────────────────
+	@PutMapping("/user/{userId}/avatar")
+	public ResponseEntity<?> updateAvatar(
+			@PathVariable Long userId,
+			@RequestParam("avatar") MultipartFile avatar) {
+
+		if (avatar == null || avatar.isEmpty()) {
+			return ResponseEntity.badRequest().body(failed("No image was provided."));
+		}
+
+		return this.repository.findById(Objects.requireNonNull(userId))
+				.<ResponseEntity<?>>map(existingUser -> {
+					try {
+						existingUser.setAvatarImage(avatar.getBytes());
+					} catch (IOException e) {
+						return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+								.body(failed("Avatar could not be read."));
+					}
+					User updated = this.userService.updateUser(existingUser);
+					return ResponseEntity.ok(updated);
+				})
+				.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(failed("User does not exist.")));
+	}
+
+	@DeleteMapping("/user/{userId}/avatar")
+	public ResponseEntity<?> deleteAvatar(@PathVariable Long userId) {
+		return this.repository.findById(Objects.requireNonNull(userId))
+				.<ResponseEntity<?>>map(existingUser -> {
+					existingUser.setAvatarImage(null);
+					return ResponseEntity.ok(this.userService.updateUser(existingUser));
 				})
 				.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(failed("User does not exist.")));
 	}
@@ -117,12 +178,78 @@ public class UserController {
 		if (!normalised.equals("ADMIN") && !normalised.equals("EDITOR") && !normalised.equals("USER")) {
 			return ResponseEntity.badRequest().body(failed("Invalid role. Allowed: USER, EDITOR, ADMIN."));
 		}
-		return this.repository.findById(java.util.Objects.requireNonNull(userId))
+		return this.repository.findById(Objects.requireNonNull(userId))
 				.<ResponseEntity<?>>map(user -> {
 					user.setRole(normalised);
 					return ResponseEntity.ok(this.userService.updateUser(user));
 				})
-				.orElseGet(() -> ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(failed("User does not exist.")));
+				.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(failed("User does not exist.")));
+	}
+
+	// ─────────────────────────────────────────────────────────
+	//  PASSWORD RESET
+	// ─────────────────────────────────────────────────────────
+	@PostMapping("/forgot-password")
+	public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> body) {
+		String email = body.get("email");
+		// Always return the same generic message, whether or not the email exists,
+		// so this endpoint can't be used to enumerate registered accounts.
+		Map<String, String> genericResponse = success(
+				"If an account exists for that email, a reset link has been sent.");
+
+		if (email == null || email.isBlank()) {
+			return ResponseEntity.ok(genericResponse);
+		}
+
+		Optional<User> userOpt = this.userService.getUserByEmail(email.trim());
+		if (userOpt.isEmpty()) {
+			return ResponseEntity.ok(genericResponse);
+		}
+
+		User user = userOpt.get();
+		// Invalidate any earlier outstanding tokens for this user before issuing a new one.
+		this.resetTokenRepository.deleteByUserUserId(user.getUserId());
+
+		PasswordResetToken resetToken = new PasswordResetToken();
+		resetToken.setToken(UUID.randomUUID().toString().replace("-", ""));
+		resetToken.setUser(user);
+		resetToken.setExpiresAt(Instant.now().plusSeconds(RESET_TOKEN_VALID_MINUTES * 60L));
+		resetToken.setUsed(false);
+		this.resetTokenRepository.save(resetToken);
+
+		this.emailService.sendPasswordResetEmail(user.getUserEmail(), resetToken.getToken());
+
+		return ResponseEntity.ok(genericResponse);
+	}
+
+	@PostMapping("/reset-password")
+	public ResponseEntity<Map<String, String>> resetPassword(@RequestBody Map<String, String> body) {
+		String token = body.get("token");
+		String newPassword = body.get("newPassword");
+
+		if (token == null || token.isBlank() || newPassword == null || newPassword.length() < 8) {
+			return ResponseEntity.badRequest().body(failed("Password must be at least 8 characters long."));
+		}
+
+		Optional<PasswordResetToken> tokenOpt = this.resetTokenRepository.findByToken(token);
+		if (tokenOpt.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(failed("This reset link is invalid."));
+		}
+
+		PasswordResetToken resetToken = tokenOpt.get();
+		if (resetToken.isUsed() || resetToken.getExpiresAt().isBefore(Instant.now())) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(failed("This reset link has expired. Please request a new one."));
+		}
+
+		User user = resetToken.getUser();
+		user.setUserPassword(passwordEncoder.encode(newPassword));
+		this.userService.updateUser(user);
+
+		resetToken.setUsed(true);
+		this.resetTokenRepository.save(resetToken);
+
+		return ResponseEntity.ok(success("Password updated. You can now sign in."));
 	}
 
 	private Map<String, String> success(String message) {

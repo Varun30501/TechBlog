@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 public interface PostService {
     Post addPost(Post post);
     List<Post> getAllPosts();
-    Page<Post> getFeed(String query, Long categoryId, Pageable pageable);
+    Page<Post> getFeed(String query, Long categoryId, Long tagId, Pageable pageable);
     List<Post> getPostsByCategory(Long categoryId);
     Optional<Post> getPostByPostId(Long postId);
     Optional<Post> getPostBySlug(String slug);

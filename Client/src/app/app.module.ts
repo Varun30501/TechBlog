@@ -9,6 +9,9 @@ import { HomeComponent } from './component/home/home.component';
 import { FormsModule } from '@angular/forms';
 import { SignupComponent } from './component/signup/signup.component';
 import { SigninComponent } from './component/signin/signin.component';
+import { ForgotPasswordComponent } from './component/forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './component/reset-password/reset-password.component';
+import { PaginationComponent } from './component/pagination/pagination.component';
 import { SinglePostComponent } from './component/single-post/single-post.component';
 import { DashboardComponent } from './component/dashboard/dashboard.component';
 import { PostsCategoryComponent } from './component/posts-category/posts-category.component';
@@ -33,6 +36,9 @@ import { FooterComponent } from './component/footer/footer.component';
     HomeComponent,
     SignupComponent,
     SigninComponent,
+    ForgotPasswordComponent,
+    ResetPasswordComponent,
+    PaginationComponent,
     SinglePostComponent,
     DashboardComponent,
     PostsCategoryComponent,

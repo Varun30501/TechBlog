@@ -34,9 +34,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
                 or lower(p.postTitle) like lower(concat('%', :query, '%'))
                 or lower(p.postContent) like lower(concat('%', :query, '%')))
             and (:categoryId is null or p.category.categoryId = :categoryId)
+            and (:tagId is null or exists (select 1 from p.tags t where t.tagId = :tagId))
             and p.status = 'PUBLISHED'
             """)
-    Page<Post> findFeed(@Param("query") String query, @Param("categoryId") Long categoryId, Pageable pageable);
+    Page<Post> findFeed(
+            @Param("query") String query,
+            @Param("categoryId") Long categoryId,
+            @Param("tagId") Long tagId,
+            Pageable pageable);
 
     // ── NEW: drafts & scheduled ──
     List<Post> findByUserUserIdAndStatusOrderByPostCreationDesc(Long userId, String status);

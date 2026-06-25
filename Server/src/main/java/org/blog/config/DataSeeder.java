@@ -28,9 +28,20 @@ public class DataSeeder {
 				categoryRepo.saveAll(Objects.requireNonNull(List.of(
 						makeCategory("Java", "Spring, JVM, backend engineering, and architecture.", 1),
 						makeCategory("Python", "Python tooling, automation, data, and backend work.", 2),
-						makeCategory("Data Science", "Analytics, notebooks, data platforms, and visualization.", 3),
-						makeCategory("AI", "Applied AI, product workflows, and practical model usage.", 4),
-						makeCategory("Machine Learning", "ML systems, model training, evaluation, and MLOps.", 5)
+						makeCategory("JavaScript", "Frontend and Node.js development, frameworks, and tooling.", 3),
+						makeCategory("Data Science", "Analytics, notebooks, data platforms, and visualization.", 4),
+						makeCategory("AI", "Applied AI, product workflows, and practical model usage.", 5),
+						makeCategory("Machine Learning", "ML systems, model training, evaluation, and MLOps.", 6),
+						makeCategory("DevOps", "CI/CD, containers, infrastructure, and deployment pipelines.", 7),
+						makeCategory("Cloud Computing", "AWS, Azure, GCP, and cloud-native architecture.", 8),
+						makeCategory("Cybersecurity", "Application security, threat modeling, and best practices.", 9),
+						makeCategory("Databases", "SQL, NoSQL, schema design, and performance tuning.", 10),
+						makeCategory("Mobile Development", "iOS, Android, and cross-platform app development.", 11),
+						makeCategory("Web Development", "Full-stack web concepts, frameworks, and best practices.", 12),
+						makeCategory("Career Advice", "Interview prep, growth tips, and developer career guidance.", 13),
+						makeCategory("Productivity", "Tools, workflows, and habits for working smarter.", 14),
+						makeCategory("Open Source", "Contributing to and maintaining open-source projects.", 15),
+						makeCategory("Tech News", "Industry updates, product launches, and trends.", 16)
 				)));
 			}
 

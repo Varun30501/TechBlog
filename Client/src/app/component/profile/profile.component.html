@@ -120,7 +120,7 @@
             <div class="sidebar-card-body">
               <div class="detail-row" *ngIf="profile?.dob">
                 <i class="bi bi-cake2"></i>
-                <span>{{profile?.dob | date:'longDate'}}</span>
+                <span>{{profile!.dob | date:'longDate'}}</span>
               </div>
               <div class="detail-row">
                 <i class="bi bi-shield-check"></i>
@@ -165,10 +165,15 @@
                 </div>
               </div>
               <label class="avatar-file-label">
-                <i class="bi bi-camera"></i>
-                {{avatarFile ? avatarFile.name : 'Change photo'}}
-                <input type="file" accept="image/*" (change)="onAvatarChange($event)" hidden>
+                <span class="spinner-border spinner-border-sm me-1" *ngIf="avatarUploading"></span>
+                <i class="bi bi-camera" *ngIf="!avatarUploading"></i>
+                {{avatarUploading ? 'Uploading…' : (avatarFile ? avatarFile.name : 'Change photo')}}
+                <input type="file" accept="image/*" (change)="onAvatarChange($event)" hidden [disabled]="avatarUploading">
               </label>
+              <button type="button" class="btn btn-link btn-sm text-danger p-0 mt-1" *ngIf="avatarPreview && !avatarUploading"
+                      (click)="removeAvatar()">
+                Remove photo
+              </button>
               <p class="form-text text-center">JPEG or PNG · max 2 MB</p>
             </div>
 

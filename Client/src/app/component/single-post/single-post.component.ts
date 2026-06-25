@@ -4,6 +4,11 @@ import { Comment } from 'src/app/model/Comment';
 import { Category, Post } from 'src/app/model/Post';
 import { PostapiService } from 'src/app/service/postapi.service';
 import { postImageSrc } from 'src/app/util/post-image';
+import { avatarImageSrc } from 'src/app/util/avatar-image';
+
+export interface CommentNode extends Comment {
+  replies: CommentNode[];
+}
 
 @Component({
   selector: 'app-single-post',
@@ -16,6 +21,7 @@ export class SinglePostComponent implements OnInit {
   postId = 0;
   post: Post | null = null;
   comments: Comment[] = [];
+  commentTree: CommentNode[] = [];
   categories: Category[] = [];
   popularPosts: Post[] = [];
   relatedPosts: Post[] = [];
@@ -24,6 +30,14 @@ export class SinglePostComponent implements OnInit {
   commentSaving = false;
   errorMessage = '';
   commentMessage = '';
+
+  postLiked = false;
+  postLikeCount = 0;
+  likingPost = false;
+
+  replyingToId: number | null = null;
+  replyText = '';
+  replySaving = false;
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -76,15 +90,26 @@ export class SinglePostComponent implements OnInit {
       }
     });
 
-    this.service.getCommentsForPost(this.postId).subscribe({
+    this.service.getCommentsForPost(this.postId, Number(localStorage.getItem('userId')) || null).subscribe({
       next: (response) => {
         this.comments = response;
+        this.commentTree = this.buildCommentTree(response);
         this.cdr.markForCheck();
       },
       error: () => {
         this.comments = [];
+        this.commentTree = [];
         this.cdr.markForCheck();
       }
+    });
+
+    this.service.getPostLikeStatus(this.postId, Number(localStorage.getItem('userId')) || null).subscribe({
+      next: (res) => {
+        this.postLiked = !!res.liked;
+        this.postLikeCount = res.likeCount || 0;
+        this.cdr.markForCheck();
+      },
+      error: () => { /* leave defaults */ }
     });
 
     this.service.getCategories().subscribe({
@@ -113,6 +138,37 @@ export class SinglePostComponent implements OnInit {
     });
   }
 
+  buildCommentTree(flat: Comment[]): CommentNode[] {
+    const byId = new Map<number, CommentNode>();
+    flat.forEach((c) => byId.set(c.commentId as number, { ...c, replies: [] }));
+
+    const roots: CommentNode[] = [];
+    byId.forEach((node) => {
+      if (node.parentCommentId && byId.has(node.parentCommentId)) {
+        byId.get(node.parentCommentId)!.replies.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+
+    // Replies read best oldest-first within a thread; top-level stays newest-first (API order).
+    const sortRepliesAsc = (nodes: CommentNode[]) => {
+      nodes.sort((a, b) => new Date(a.commentCreation || 0).getTime() - new Date(b.commentCreation || 0).getTime());
+      nodes.forEach((n) => sortRepliesAsc(n.replies));
+    };
+    roots.forEach((r) => sortRepliesAsc(r.replies));
+
+    return roots;
+  }
+
+  refreshComments(): void {
+    this.service.getCommentsForPost(this.postId, Number(localStorage.getItem('userId')) || null).subscribe((comments) => {
+      this.comments = comments;
+      this.commentTree = this.buildCommentTree(comments);
+      this.cdr.markForCheck();
+    });
+  }
+
   addComment(content: string): void {
     const text = content.trim();
     const userId = Number(localStorage.getItem('userId'));
@@ -126,11 +182,7 @@ export class SinglePostComponent implements OnInit {
       next: () => {
         this.commentSaving = false;
         this.commentMessage = 'Comment added.';
-        this.service.getCommentsForPost(this.postId).subscribe((comments) => {
-          this.comments = comments;
-          this.cdr.markForCheck();
-        });
-        this.cdr.markForCheck();
+        this.refreshComments();
       },
       error: (error) => {
         this.commentSaving = false;
@@ -140,15 +192,105 @@ export class SinglePostComponent implements OnInit {
     });
   }
 
-  imageSrc = postImageSrc;
+  togglePostLike(): void {
+    const userId = Number(localStorage.getItem('userId'));
+    if (!userId || !this.post || this.likingPost) { return; }
+    this.likingPost = true;
+    // Optimistic UI update
+    const prevLiked = this.postLiked;
+    const prevCount = this.postLikeCount;
+    this.postLiked = !prevLiked;
+    this.postLikeCount = prevCount + (this.postLiked ? 1 : -1);
 
-  /* ── Author profile data (read from localStorage, set by profile page) ── */
-  readonly AVATAR_KEY = 'userAvatar_';
-
-  get authorAvatar(): string | null {
-    const uid = localStorage.getItem('userId');
-    return uid ? localStorage.getItem(this.AVATAR_KEY + uid) : null;
+    this.service.togglePostLike(this.post.postId, userId).subscribe({
+      next: (res) => {
+        this.postLiked = !!res.liked;
+        this.postLikeCount = res.likeCount || 0;
+        this.likingPost = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        // Roll back on failure
+        this.postLiked = prevLiked;
+        this.postLikeCount = prevCount;
+        this.likingPost = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
+
+  toggleCommentLike(comment: CommentNode): void {
+    const userId = Number(localStorage.getItem('userId'));
+    if (!userId) { return; }
+    const prevLiked = comment.likedByCurrentUser;
+    const prevCount = comment.likeCount || 0;
+    comment.likedByCurrentUser = !prevLiked;
+    comment.likeCount = prevCount + (comment.likedByCurrentUser ? 1 : -1);
+
+    this.service.toggleCommentLike(comment.commentId as number, userId).subscribe({
+      next: (res) => {
+        comment.likedByCurrentUser = !!res.liked;
+        comment.likeCount = res.likeCount || 0;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        comment.likedByCurrentUser = prevLiked;
+        comment.likeCount = prevCount;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  startReply(commentId: number): void {
+    this.replyingToId = commentId;
+    this.replyText = '';
+  }
+
+  cancelReply(): void {
+    this.replyingToId = null;
+    this.replyText = '';
+  }
+
+  submitReply(parentCommentId: number): void {
+    const text = this.replyText.trim();
+    const userId = Number(localStorage.getItem('userId'));
+    if (!text || !userId || !this.post) { return; }
+
+    this.replySaving = true;
+    this.service.addComment(this.post.postId, userId, { content: text, parentCommentId }).subscribe({
+      next: () => {
+        this.replySaving = false;
+        this.replyingToId = null;
+        this.replyText = '';
+        this.refreshComments();
+      },
+      error: (error) => {
+        this.replySaving = false;
+        this.commentMessage = error.error?.message || 'Reply could not be added.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  imageSrc = postImageSrc;
+  avatarSrc = avatarImageSrc;
+
+  /* ── Author avatar: the real, backend-stored photo of whoever WROTE this
+     post (post.user), not the current viewer. The previous version read
+     localStorage keyed by the logged-in viewer's own userId, which meant
+     every post showed the *reader's* avatar instead of the author's — this
+     fixes that by using the avatar that comes back on post.user directly. ── */
+  get authorAvatar(): string | null {
+    return avatarImageSrc(this.post?.user);
+  }
+
+  /* The fields below (title/org/qualification/bio/expertise/links) are still
+     sourced from localStorage rather than the database, because the User
+     entity doesn't have columns for them yet. That means — same as before —
+     they reflect whoever is currently signed in on THIS browser, not
+     necessarily the actual post author. Worth a follow-up if author bio
+     cards need to be accurate for every reader, not just the author viewing
+     their own post. */
   get authorTitle():         string { return localStorage.getItem('userTitle')         || ''; }
   get authorOrg():           string { return localStorage.getItem('userOrg')           || ''; }
   get authorQualification(): string { return localStorage.getItem('userQualification') || ''; }

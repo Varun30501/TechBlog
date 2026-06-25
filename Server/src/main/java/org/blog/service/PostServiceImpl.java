@@ -34,8 +34,8 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Page<Post> getFeed(String query, Long categoryId, Pageable pageable) {
-        return this.postRepository.findFeed(query, categoryId, pageable);
+    public Page<Post> getFeed(String query, Long categoryId, Long tagId, Pageable pageable) {
+        return this.postRepository.findFeed(query, categoryId, tagId, pageable);
     }
 
     @Override

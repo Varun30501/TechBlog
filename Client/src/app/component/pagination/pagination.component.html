@@ -1,0 +1,21 @@
+<nav class="pagination-bar" *ngIf="totalPages > 1" aria-label="Pagination">
+  <button type="button" class="page-btn" [disabled]="!hasPrev" (click)="goTo(page - 1)" aria-label="Previous page">
+    <i class="bi bi-chevron-left"></i>
+  </button>
+
+  <button type="button" *ngIf="visiblePages[0] > 0" class="page-btn" (click)="goTo(0)">1</button>
+  <span *ngIf="visiblePages[0] > 1" class="page-ellipsis">…</span>
+
+  <button type="button" *ngFor="let p of visiblePages" class="page-btn"
+          [class.active]="p === page" (click)="goTo(p)">
+    {{p + 1}}
+  </button>
+
+  <span *ngIf="visiblePages[visiblePages.length - 1] < totalPages - 2" class="page-ellipsis">…</span>
+  <button type="button" *ngIf="visiblePages[visiblePages.length - 1] < totalPages - 1" class="page-btn"
+          (click)="goTo(totalPages - 1)">{{totalPages}}</button>
+
+  <button type="button" class="page-btn" [disabled]="!hasNext" (click)="goTo(page + 1)" aria-label="Next page">
+    <i class="bi bi-chevron-right"></i>
+  </button>
+</nav>

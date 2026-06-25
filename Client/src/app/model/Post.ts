@@ -17,6 +17,7 @@ export interface PostAuthor {
   userEmail?: string;
   about?: string;
   role?: string;
+  avatarImage?: string;
 }
 
 export interface Post {
@@ -30,6 +31,8 @@ export interface Post {
   postUpdation?: string;
   featured?: boolean;
   viewCount?: number;
+  likeCount?: number;
+  likedByCurrentUser?: boolean;
   readingMinutes?: number;
   status?: 'DRAFT' | 'PUBLISHED' | 'SCHEDULED';
   scheduledAt?: string;

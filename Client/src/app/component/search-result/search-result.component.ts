@@ -14,8 +14,15 @@ export class SearchResultComponent implements OnInit {
 
   posts: Post[] = [];
   title = '';
+  tagId: number | null = null;
+  tagName = '';
   loading = false;   // false until a search is actually in flight
   errorMessage = '';
+
+  page = 0;
+  pageSize = 12;
+  totalPages = 0;
+  totalElements = 0;
 
   constructor(
     private service: PostapiService,
@@ -26,6 +33,9 @@ export class SearchResultComponent implements OnInit {
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((params) => {
       this.title = params.get('postTitle') || '';
+      this.tagId = params.get('tagId') ? Number(params.get('tagId')) : null;
+      this.tagName = params.get('tagName') || '';
+      this.page = 0;
       this.posts = [];
       this.errorMessage = '';
       this.cdr.markForCheck();
@@ -33,9 +43,15 @@ export class SearchResultComponent implements OnInit {
     });
   }
 
+  /** Header copy adapts to whether this is a text search or a tag browse */
+  get resultsLabel(): string {
+    if (this.tagName) { return `Posts tagged #${this.tagName}`; }
+    return `Results for "${this.title}"`;
+  }
+
   search(): void {
     const query = this.title.trim();
-    if (!query) {
+    if (!query && !this.tagId) {
       this.router.navigate(['/search']);
       return;
     }
@@ -43,9 +59,11 @@ export class SearchResultComponent implements OnInit {
     this.loading = true;
     this.cdr.markForCheck();
 
-    this.service.getPostByTitle(query).subscribe({
-      next: (posts: Post[]) => {
-        this.posts = posts;
+    this.service.getFeed(query, null, this.tagId, this.page, this.pageSize).subscribe({
+      next: (response) => {
+        this.posts = response.content || [];
+        this.totalPages = response.totalPages || 0;
+        this.totalElements = response.totalElements || 0;
         this.loading = false;
         this.cdr.markForCheck();
       },
@@ -56,6 +74,12 @@ export class SearchResultComponent implements OnInit {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  onPageChange(page: number): void {
+    this.page = page;
+    this.search();
+    document.getElementById('search-results-top')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   imageSrc = postImageSrc;

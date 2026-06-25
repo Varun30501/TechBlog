@@ -19,6 +19,11 @@ export class HomeComponent implements OnInit {
   loading = true;
   errorMessage = '';
 
+  /* pagination over the main feed (0-indexed to match Spring's Page<T>) */
+  page = 0;
+  pageSize = 12;
+  totalPages = 0;
+
   constructor(
     private service: PostapiService,
     private router: Router,
@@ -51,9 +56,10 @@ export class HomeComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    this.service.getFeed('', null, 0, 18).subscribe({
+    this.service.getFeed('', null, null, this.page, this.pageSize).subscribe({
       next: (response) => {
         this.allPosts = response.content || [];
+        this.totalPages = response.totalPages || 0;
         this.loading = false;
         this.cdr.markForCheck();
       },
@@ -88,6 +94,13 @@ export class HomeComponent implements OnInit {
       },
       error: () => { this.categories = []; }
     });
+  }
+
+  onPageChange(page: number): void {
+    this.page = page;
+    this.loadHome();
+    // Jump back to the feed section rather than the very top of the page.
+    document.getElementById('latest-posts')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   search(term: string): void {

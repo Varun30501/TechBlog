@@ -73,9 +73,20 @@
 
           <!-- Tags -->
           <div class="d-flex flex-wrap gap-2 mt-4" *ngIf="currentPost.tags && currentPost.tags.length > 0">
-            <a *ngFor="let tag of currentPost.tags" class="topic-pill" style="font-size:0.8rem;" routerLink="/search">
+            <a *ngFor="let tag of currentPost.tags" class="topic-pill" style="font-size:0.8rem;"
+               [routerLink]="['/search-result']" [queryParams]="{ tagId: tag.tagId, tagName: tag.tagName }">
               <i class="bi bi-hash"></i>{{tag.tagName}}
             </a>
+          </div>
+
+          <!-- Like bar -->
+          <div class="like-bar mt-4 pt-4 d-flex align-items-center gap-3">
+            <button type="button" class="btn btn-sm" [class.btn-dark]="postLiked" [class.btn-outline-dark]="!postLiked"
+                    (click)="togglePostLike()" [disabled]="!isSignedIn" [title]="isSignedIn ? '' : 'Sign in to like this post'">
+              <i class="bi" [class.bi-heart-fill]="postLiked" [class.bi-heart]="!postLiked"></i>
+              {{postLiked ? 'Liked' : 'Like'}}
+            </button>
+            <span class="small text-muted-soft">{{postLikeCount}} {{postLikeCount === 1 ? 'like' : 'likes'}}</span>
           </div>
 
           <!-- Share bar -->
@@ -129,18 +140,55 @@
               </div>
             </ng-template>
 
-            <div class="comment-list" *ngIf="comments.length > 0; else noComments">
-              <div class="comment-item" *ngFor="let c of comments">
-                <div class="avatar">{{initials(c.user?.userName)}}</div>
-                <div>
+            <div class="comment-list" *ngIf="commentTree.length > 0; else noComments">
+              <ng-container *ngFor="let c of commentTree">
+                <ng-container *ngTemplateOutlet="commentNode; context: { c: c, depth: 0 }"></ng-container>
+              </ng-container>
+            </div>
+
+            <ng-template #commentNode let-c="c" let-depth="depth">
+              <div class="comment-item" [style.marginLeft.px]="depth * 28">
+                <div class="avatar">
+                  <img *ngIf="avatarSrc(c.user)" [src]="avatarSrc(c.user)" alt="" class="avatar-img">
+                  <span *ngIf="!avatarSrc(c.user)">{{initials(c.user?.userName)}}</span>
+                </div>
+                <div class="flex-grow-1">
                   <div class="d-flex flex-wrap align-items-center gap-2">
                     <strong>{{c.user?.userName || 'Reader'}}</strong>
                     <span class="small text-muted-soft">{{c.commentCreation | date:'mediumDate'}}</span>
                   </div>
-                  <p class="mb-0">{{c.content}}</p>
+                  <p class="mb-1">{{c.content}}</p>
+                  <div class="d-flex align-items-center gap-3">
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none"
+                            (click)="toggleCommentLike(c)" [disabled]="!isSignedIn">
+                      <i class="bi" [class.bi-heart-fill]="c.likedByCurrentUser" [class.bi-heart]="!c.likedByCurrentUser"></i>
+                      {{c.likeCount || 0}}
+                    </button>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none"
+                            (click)="startReply(c.commentId)" *ngIf="isSignedIn">
+                      <i class="bi bi-reply"></i> Reply
+                    </button>
+                  </div>
+
+                  <div class="comment-box mt-2 mb-2" *ngIf="replyingToId === c.commentId">
+                    <textarea class="form-control" rows="2" placeholder="Write a reply…"
+                              [(ngModel)]="replyText"></textarea>
+                    <div class="d-flex justify-content-end gap-2 mt-2">
+                      <button type="button" class="btn btn-outline-dark btn-sm" (click)="cancelReply()">Cancel</button>
+                      <button type="button" class="btn btn-dark btn-sm" [disabled]="replySaving"
+                              (click)="submitReply(c.commentId)">
+                        <span class="spinner-border spinner-border-sm me-1" *ngIf="replySaving"></span>
+                        Post reply
+                      </button>
+                    </div>
+                  </div>
+
+                  <ng-container *ngFor="let r of c.replies">
+                    <ng-container *ngTemplateOutlet="commentNode; context: { c: r, depth: depth + 1 }"></ng-container>
+                  </ng-container>
                 </div>
               </div>
-            </div>
+            </ng-template>
 
             <ng-template #noComments>
               <div class="empty-state">

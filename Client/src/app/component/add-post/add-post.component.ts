@@ -29,6 +29,11 @@ export class AddPostComponent implements OnInit, AfterViewInit, OnDestroy {
   postExcerpt  = '';
   categoryId   = '';
   featured     = false;
+  showNewCategoryForm = false;
+  newCategoryName = '';
+  newCategoryDescription = '';
+  savingCategory = false;
+  categoryError = '';
   status: 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' = 'PUBLISHED';
   scheduledAt  = '';
   metaTitle    = '';
@@ -50,9 +55,67 @@ export class AddPostComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.loadCategories();
+  }
+
+  loadCategories(selectId?: number): void {
     this.service.getCategories().subscribe({
-      next: (cats) => { this.categories = cats; this.cdr.markForCheck(); },
+      next: (cats) => {
+        this.categories = cats;
+        if (selectId) { this.categoryId = String(selectId); }
+        this.cdr.markForCheck();
+      },
       error: () => { this.categories = []; }
+    });
+  }
+
+  onCategorySelectChange(): void {
+    if (this.categoryId === '__new__') {
+      this.showNewCategoryForm = true;
+      this.categoryId = '';
+    }
+  }
+
+  cancelNewCategory(): void {
+    this.showNewCategoryForm = false;
+    this.newCategoryName = '';
+    this.newCategoryDescription = '';
+    this.categoryError = '';
+  }
+
+  createCategory(): void {
+    this.categoryError = '';
+    if (!this.newCategoryName.trim()) {
+      this.categoryError = 'Please enter a category name.';
+      return;
+    }
+    this.savingCategory = true;
+    this.service.addCategory({
+      categoryName: this.newCategoryName.trim(),
+      categoryDescription: this.newCategoryDescription.trim(),
+      displayOrder: 100
+    }).subscribe({
+      next: (res: any) => {
+        this.savingCategory = false;
+        this.showNewCategoryForm = false;
+        const createdName = this.newCategoryName.trim();
+        this.newCategoryName = '';
+        this.newCategoryDescription = '';
+        // Reload categories then select the newly created one by name
+        this.service.getCategories().subscribe({
+          next: (cats) => {
+            this.categories = cats;
+            const created = cats.find(c => c.categoryName.toLowerCase() === createdName.toLowerCase());
+            if (created) { this.categoryId = String(created.categoryId); }
+            this.cdr.markForCheck();
+          }
+        });
+      },
+      error: (err) => {
+        this.savingCategory = false;
+        this.categoryError = err.error?.message || 'Category could not be created.';
+        this.cdr.markForCheck();
+      }
     });
   }
 

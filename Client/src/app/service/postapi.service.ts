@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { AnalyticsData, Category, FeedResponse, Post } from '../model/Post';
 import { User } from '../model/User';
+import { environment } from 'src/environments/environment';
 
 export interface BlogStats {
   posts: number;
@@ -17,7 +18,7 @@ export interface BlogStats {
 @Injectable({ providedIn: 'root' })
 export class PostapiService {
 
-  private baseUrl = '/api/blog';
+  private baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 
@@ -26,10 +27,11 @@ export class PostapiService {
     return this.http.get<Post[]>(`${this.baseUrl}/posts`);
   }
 
-  getFeed(query = '', categoryId?: number | string | null, page = 0, size = 9): Observable<FeedResponse<Post>> {
+  getFeed(query = '', categoryId?: number | string | null, tagId?: number | string | null, page = 0, size = 9): Observable<FeedResponse<Post>> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (query)      { params = params.set('query', query); }
     if (categoryId) { params = params.set('categoryId', categoryId); }
+    if (tagId)      { params = params.set('tagId', tagId); }
     return this.http.get<FeedResponse<Post>>(`${this.baseUrl}/posts/feed`, { params });
   }
 
@@ -137,8 +139,10 @@ export class PostapiService {
   }
 
   // ── Comments ──
-  getCommentsForPost(postId: any): Observable<any> {
-    return this.http.get(`${this.baseUrl}/comment/${postId}`);
+  getCommentsForPost(postId: any, userId?: number | null): Observable<any> {
+    let params = new HttpParams();
+    if (userId) { params = params.set('userId', userId); }
+    return this.http.get(`${this.baseUrl}/comment/${postId}`, { params });
   }
 
   addComment(postId: number, userId: number, content: any): Observable<any> {
@@ -167,6 +171,21 @@ export class PostapiService {
       { headers: { 'content-type': 'application/json' } });
   }
 
+  toggleCommentLike(commentId: number, userId: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/comment/${commentId}/like/${userId}`, {});
+  }
+
+  // ── Post likes ──
+  togglePostLike(postId: number, userId: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/post/${postId}/like/${userId}`, {});
+  }
+
+  getPostLikeStatus(postId: number, userId?: number | null): Observable<any> {
+    let params = new HttpParams();
+    if (userId) { params = params.set('userId', userId); }
+    return this.http.get(`${this.baseUrl}/post/${postId}/like-status`, { params });
+  }
+
   // ── Users ──
   signup(user: User): Observable<any> {
     return this.http.post(`${this.baseUrl}/signup`, JSON.stringify(user),
@@ -186,6 +205,10 @@ export class PostapiService {
     return this.http.get(`${this.baseUrl}/user/${userId}`);
   }
 
+  updateUser(userId: number, partial: Partial<User>): Observable<any> {
+    return this.http.put(`${this.baseUrl}/user/${userId}`, partial);
+  }
+
   deleteUserById(userId: any): Observable<any> {
     return this.http.delete(`${this.baseUrl}/user/${userId}`);
   }
@@ -193,6 +216,25 @@ export class PostapiService {
   changeUserRole(userId: number, role: string): Observable<any> {
     const params = new HttpParams().set('role', role);
     return this.http.put(`${this.baseUrl}/user/${userId}/role`, null, { params });
+  }
+
+  uploadAvatar(userId: number, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return this.http.put(`${this.baseUrl}/user/${userId}/avatar`, formData);
+  }
+
+  deleteAvatar(userId: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/user/${userId}/avatar`);
+  }
+
+  // ── Password reset ──
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/reset-password`, { token, newPassword });
   }
 
   // ── Stats & Analytics ──

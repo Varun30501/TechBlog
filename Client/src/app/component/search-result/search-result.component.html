@@ -1,12 +1,12 @@
 <section class="content-header">
   <div class="container">
     <a class="back-link mb-3" routerLink="/search"><i class="bi bi-arrow-left"></i> Search</a>
-    <h1 class="display-6 mb-2">Results for "{{title}}"</h1>
-    <p class="text-muted-soft mb-0">{{posts.length}} matching posts</p>
+    <h1 class="display-6 mb-2">{{resultsLabel}}</h1>
+    <p class="text-muted-soft mb-0">{{totalElements}} matching post{{totalElements === 1 ? '' : 's'}}</p>
   </div>
 </section>
 
-<section class="page-shell">
+<section class="page-shell" id="search-results-top">
   <div class="container">
     <div class="alert alert-danger" *ngIf="errorMessage">{{errorMessage}}</div>
 
@@ -44,5 +44,7 @@
         </article>
       </div>
     </div>
+
+    <app-pagination *ngIf="!loading" [page]="page" [totalPages]="totalPages" (pageChange)="onPageChange($event)"></app-pagination>
   </div>
 </section>

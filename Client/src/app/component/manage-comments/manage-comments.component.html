@@ -30,7 +30,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let comment of comments">
+          <tr *ngFor="let comment of pagedComments">
             <td>{{comment.content}}</td>
             <td>{{comment.post?.postTitle || 'Post removed'}}</td>
             <td>{{comment.user?.userName || 'Reader'}}</td>
@@ -47,6 +47,9 @@
         </tbody>
       </table>
     </div>
+
+    <app-pagination *ngIf="!loading && comments.length > pageSize" [page]="page" [totalPages]="totalPages"
+                     (pageChange)="onPageChange($event)"></app-pagination>
 
     <div class="placeholder-card placeholder-glow" *ngIf="loading">
       <span class="placeholder col-12"></span>

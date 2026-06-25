@@ -7,6 +7,7 @@ export class User
   public dob:string;
   public about:string;
   public role:string;
+  public avatarImage?: string;
 
 
   constructor(userId:any,userName:any,userPassword:any,email:any, dob:any, about:any, role:any)

@@ -86,7 +86,7 @@
 </section>
 
 <!-- ======= NEW ON TECHBLOG ======= -->
-<section class="py-5 surface-band">
+<section class="py-5 surface-band" id="latest-posts">
   <div class="container">
 
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
@@ -126,7 +126,7 @@
     </div>
 
     <div class="row g-4" *ngIf="!loading && newPosts.length > 0">
-      <div class="col-md-6 col-lg-4" *ngFor="let post of newPosts.slice(0, 9); trackBy: trackPost">
+      <div class="col-md-6 col-lg-4" *ngFor="let post of newPosts; trackBy: trackPost">
         <article class="post-card h-100">
           <a [routerLink]="['/post', post.postId]" class="post-image">
             <img [src]="imageSrc(post)" [alt]="post.postTitle" loading="lazy">
@@ -149,6 +149,8 @@
         </article>
       </div>
     </div>
+
+    <app-pagination *ngIf="!loading" [page]="page" [totalPages]="totalPages" (pageChange)="onPageChange($event)"></app-pagination>
   </div>
 </section>
 

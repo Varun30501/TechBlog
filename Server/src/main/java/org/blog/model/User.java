@@ -2,7 +2,11 @@ package org.blog.model;
 
 import java.time.LocalDate;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -12,7 +16,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-
 import lombok.Data;
 
 @Entity 
@@ -46,6 +49,11 @@ public class User {   //Bean validation
 	
 	@Column(length = 20, nullable = false)
 	private String role;
+
+	// ── NEW: profile photo, stored the same way as Post.postImage ──
+	@JdbcTypeCode(SqlTypes.VARBINARY)
+	@Column(columnDefinition = "LONGBLOB")
+	private byte[] avatarImage;
 
 	@PrePersist
 	private void syncDefaults() {

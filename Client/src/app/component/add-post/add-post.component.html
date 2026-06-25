@@ -170,10 +170,30 @@
 
           <div class="mb-3">
             <label class="form-label fw-semibold" for="categoryId">Category</label>
-            <select id="categoryId" class="form-select" [(ngModel)]="categoryId">
+            <select id="categoryId" class="form-select" [(ngModel)]="categoryId" (change)="onCategorySelectChange()" *ngIf="!showNewCategoryForm">
               <option value="">Choose a category</option>
               <option *ngFor="let c of categories" [value]="c.categoryId">{{c.categoryName}}</option>
+              <option value="__new__">+ Add new category…</option>
             </select>
+
+            <div class="new-category-form border rounded p-3" *ngIf="showNewCategoryForm">
+              <div class="alert alert-danger py-2" *ngIf="categoryError">{{categoryError}}</div>
+              <div class="mb-2">
+                <label class="form-label small fw-semibold" for="newCategoryName">New category name</label>
+                <input id="newCategoryName" class="form-control" [(ngModel)]="newCategoryName" name="newCategoryName" placeholder="e.g. Kubernetes">
+              </div>
+              <div class="mb-2">
+                <label class="form-label small fw-semibold" for="newCategoryDescription">Description <span class="text-muted-soft">(optional)</span></label>
+                <input id="newCategoryDescription" class="form-control" [(ngModel)]="newCategoryDescription" name="newCategoryDescription" placeholder="Short description">
+              </div>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-dark btn-sm" [disabled]="savingCategory" (click)="createCategory()">
+                  <span class="spinner-border spinner-border-sm me-1" *ngIf="savingCategory"></span>
+                  Create category
+                </button>
+                <button type="button" class="btn btn-outline-dark btn-sm" (click)="cancelNewCategory()">Cancel</button>
+              </div>
+            </div>
           </div>
 
           <div class="featured-toggle-card" [class.active]="featured">

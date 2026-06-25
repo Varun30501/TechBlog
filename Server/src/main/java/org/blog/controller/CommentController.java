@@ -1,10 +1,14 @@
 package org.blog.controller;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.blog.model.Comment;
+import org.blog.repository.CommentLikeRepository;
 import org.blog.repository.CommentRepository;
 import org.blog.repository.UserRepository;
 import org.blog.service.CommentService;
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -30,16 +35,19 @@ public class CommentController {
 	private final PostService postService;
 	private final UserRepository userRepository;
 	private final CommentRepository commentRepository;
+	private final CommentLikeRepository commentLikeRepository;
 
 	public CommentController(
 			CommentService service,
 			PostService postService,
 			UserRepository userRepository,
-			CommentRepository commentRepository) {
+			CommentRepository commentRepository,
+			CommentLikeRepository commentLikeRepository) {
 		this.service = service;
 		this.postService = postService;
 		this.userRepository = userRepository;
 		this.commentRepository = commentRepository;
+		this.commentLikeRepository = commentLikeRepository;
 	}
 
 	@PostMapping("/comment/{postId}/{userId}")
@@ -48,8 +56,6 @@ public class CommentController {
 			@PathVariable("postId") Long postId,
 			@Valid @RequestBody Comment comment) {
 
-		// Objects.requireNonNull satisfies the @NonNull constraint on repository
-		// findById() without placing @NonNull on a local variable (illegal in Java).
 		var post = this.postService.getPostByPostId(Objects.requireNonNull(postId));
 		var user = this.userRepository.findById(Objects.requireNonNull(userId));
 
@@ -57,10 +63,18 @@ public class CommentController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(failed("Post or user not found."));
 		}
 
+		if (comment.getParentCommentId() != null) {
+			var parent = this.commentRepository.findById(comment.getParentCommentId());
+			if (parent.isEmpty() || !Objects.equals(parent.get().getPost().getPostId(), postId)) {
+				return ResponseEntity.badRequest().body(failed("Parent comment not found on this post."));
+			}
+		}
+
 		Comment obj = new Comment();
 		obj.setContent(comment.getContent());
 		obj.setPost(post.get());
 		obj.setUser(user.get());
+		obj.setParentCommentId(comment.getParentCommentId());
 		this.service.addComment(obj);
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(success("Comment added."));
@@ -92,8 +106,12 @@ public class CommentController {
 	}
 
 	@GetMapping("/comment/{postId}")
-	public ResponseEntity<List<Comment>> getCommentsByPostId(@PathVariable("postId") Long postId) {
-		return ResponseEntity.ok(this.service.findCommentsByPostId(postId));
+	public ResponseEntity<List<Comment>> getCommentsByPostId(
+			@PathVariable("postId") Long postId,
+			@RequestParam(value = "userId", required = false) Long userId) {
+		List<Comment> comments = this.service.findCommentsByPostId(postId);
+		enrichWithLikes(comments, userId);
+		return ResponseEntity.ok(comments);
 	}
 
 	@GetMapping("/comment/user/{userId}")
@@ -111,6 +129,56 @@ public class CommentController {
 		return this.commentRepository.findById(Objects.requireNonNull(commentId))
 				.<ResponseEntity<?>>map(comment -> ResponseEntity.ok(comment))
 				.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(failed("Comment not found.")));
+	}
+
+	// ─────────────────────────────────────────────────────────
+	//  LIKES (toggle)
+	// ─────────────────────────────────────────────────────────
+	@PostMapping("/comment/{commentId}/like/{userId}")
+	public ResponseEntity<Map<String, Object>> toggleLike(
+			@PathVariable("commentId") Long commentId,
+			@PathVariable("userId") Long userId) {
+
+		var commentOpt = this.commentRepository.findById(Objects.requireNonNull(commentId));
+		var userOpt = this.userRepository.findById(Objects.requireNonNull(userId));
+		if (commentOpt.isEmpty() || userOpt.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("status", "failed", "message", "Comment or user not found."));
+		}
+
+		var existing = this.commentLikeRepository.findByCommentCommentIdAndUserUserId(commentId, userId);
+		boolean liked;
+		if (existing.isPresent()) {
+			this.commentLikeRepository.delete(existing.get());
+			liked = false;
+		} else {
+			var like = new org.blog.model.CommentLike();
+			like.setComment(commentOpt.get());
+			like.setUser(userOpt.get());
+			this.commentLikeRepository.save(like);
+			liked = true;
+		}
+
+		long count = this.commentLikeRepository.countByCommentCommentId(commentId);
+		return ResponseEntity.ok(Map.of("liked", liked, "likeCount", count));
+	}
+
+	private void enrichWithLikes(List<Comment> comments, Long userId) {
+		if (comments.isEmpty()) {
+			return;
+		}
+		List<Long> ids = comments.stream().map(Comment::getCommentId).collect(Collectors.toList());
+
+		Map<Long, Long> countsByCommentId = this.commentLikeRepository.countByCommentIds(ids).stream()
+				.collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+
+		Set<Long> likedIds = userId == null
+				? new HashSet<>()
+				: new HashSet<>(this.commentLikeRepository.findLikedCommentIds(ids, userId));
+
+		for (Comment c : comments) {
+			c.setLikeCount(countsByCommentId.getOrDefault(c.getCommentId(), 0L));
+			c.setLikedByCurrentUser(likedIds.contains(c.getCommentId()));
+		}
 	}
 
 	private Map<String, String> success(String message) {
