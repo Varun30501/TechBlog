@@ -19,5 +19,9 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # Render sets $PORT at runtime; Spring Boot reads server.port from it.
+# -Djava.net.preferIPv4Stack=true avoids a known class of "connection refused"
+# failures when a host (like Aiven's MySQL endpoint) resolves to both an IPv4
+# and IPv6 address and the IPv6 path isn't actually reachable from inside the
+# container network — forcing IPv4 sidesteps that entirely.
 EXPOSE 8080
-ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${PORT:-8080}"]
+ENTRYPOINT ["sh", "-c", "java -Djava.net.preferIPv4Stack=true -jar app.jar --server.port=${PORT:-8080}"]
